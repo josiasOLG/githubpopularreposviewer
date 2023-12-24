@@ -7,7 +7,7 @@ const Sidebar: React.FC = () => {
       <nav>
         <ul>
           <li className="mb-2">
-            <NavLink to="/home" className="block p-2 rounded hover:bg-gray-700">
+            <NavLink to="/" className="block p-2 rounded hover:bg-gray-700">
               Home
             </NavLink>
           </li>
