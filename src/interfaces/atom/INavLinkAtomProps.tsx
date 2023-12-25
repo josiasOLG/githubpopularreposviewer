@@ -1,4 +1,4 @@
 export interface INavLinkAtomProps {
   to: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
