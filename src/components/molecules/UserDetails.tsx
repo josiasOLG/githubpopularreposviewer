@@ -14,22 +14,22 @@ const UserDetails: React.FC<IUserDetailsProps> = ({
   sortOptions,
 }) => {
   return (
-    <div className="flex items-center space-x-4">
+    <div className="flex flex-col md:flex-row items-center md:items-start space-x-0 md:space-x-4">
       <Avatar
         imageUrl={avatarUrl}
         altText={`${username}'s avatar`}
-        className="w-16 h-16"
+        className="w-16 h-16 md:w-24 md:h-24"
       />
-      <div>
-        <h2 className="text-xl font-semibold">{username}</h2>
-        <p className="text-sm text-gray-600">{bio}</p>
+      <div className="mt-4 md:mt-0 md:w-2/3">
+        <h2 className="text-xl md:text-2xl font-semibold">{username}</h2>
+        <p className="text-sm md:text-base text-gray-600">{bio}</p>
         <div className="flex mt-2">
           <Label text={`Followers: ${followers}`} className="mr-4" />
           <Label text={`Following: ${following}`} />
         </div>
-      </div>
-      <div className="flex mt-2">
-        <Select options={sortOptions} onChange={handleSortChange} />
+        <div className="flex mt-2">
+          <Select options={sortOptions} onChange={handleSortChange} />
+        </div>
       </div>
     </div>
   );

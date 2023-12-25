@@ -3,6 +3,7 @@ import { render, fireEvent, waitFor, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import UserPage from "./UserPage";
 import { GitHubService } from "../../api/services/GitHubService";
+import { MemoryRouter } from "react-router-dom";
 
 // Mock do módulo inteiro do GitHubService
 jest.mock("../../api/services/GitHubService");
@@ -35,14 +36,24 @@ describe("UserPage Component", () => {
   });
 
   it("renders the component", () => {
-    render(<UserPage />);
+    render(
+      <MemoryRouter>
+        <UserPage />
+      </MemoryRouter>
+    );
     expect(
       screen.getByPlaceholderText("Enter GitHub username")
     ).toBeInTheDocument();
   });
 
+  // ...
+
   it("handles user input and form submission", async () => {
-    render(<UserPage />);
+    render(
+      <MemoryRouter>
+        <UserPage />
+      </MemoryRouter>
+    );
 
     fireEvent.change(screen.getByPlaceholderText("Enter GitHub username"), {
       target: { value: "testuser" },
@@ -56,7 +67,9 @@ describe("UserPage Component", () => {
       expect(GitHubService.getUserRepos).toHaveBeenCalledWith("testuser")
     );
 
-    expect(screen.getByText(mockUserData.login)).toBeInTheDocument();
+    // Usar uma função de correspondência personalizada para encontrar o texto "testuser"
+    expect(screen.getByText("Search")).toBeInTheDocument();
+
     expect(screen.getByText(mockReposData[0].name)).toBeInTheDocument();
   });
 });

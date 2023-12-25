@@ -1,89 +1,51 @@
-import axios from "../../api/interceptors/ApiInterceptor";
+import fetchWithConfig from "../interceptors/fetchWithConfig";
 
 /**
- * @class GitHubService
- * @description
- * Esta classe fornece métodos para interagir com a API do GitHub.
- * Permite recuperar detalhes do usuário, repositórios do usuário e detalhes do repositório.
- *
- * @requires axios - Utiliza axios para realizar as requisições HTTP.
- * @requires ApiInterceptor - Axios com interceptores configurados para a aplicação.
+ * Classe de serviço para interagir com a API do GitHub.
+ * Oferece métodos para recuperar detalhes do usuário, repositórios e detalhes do repositório.
  */
 export class GitHubService {
   /**
-   * @method getUserDetails
-   * @description
    * Recupera detalhes de um usuário do GitHub.
-   *
    * @param {string} username - Nome de usuário do GitHub.
-   * @returns Retorna um objeto contendo os detalhes do usuário do GitHub.
-   * @throws Lança um erro se a requisição falhar.
-   *
-   * @example
-   * try {
-   *   const userDetails = await GitHubService.getUserDetails('nomeDeUsuario');
-   *   // use userDetails
-   * } catch (error) {
-   *   // trate o erro
-   * }
+   * @returns {Promise<any>} Uma promessa contendo os detalhes do usuário do GitHub.
+   * @throws {Error} Lança um erro se a requisição falhar.
    */
-  static async getUserDetails(username: string) {
+  static async getUserDetails(username: string): Promise<any> {
     try {
-      const response = await axios.get(`/users/${username}`);
-      return response.data;
+      const response = await fetchWithConfig(`/users/${username}`);
+      return response;
     } catch (error) {
       throw error;
     }
   }
 
   /**
-   * @method getUserRepos
-   * @description
    * Recupera os repositórios de um usuário do GitHub.
-   *
    * @param {string} username - Nome de usuário do GitHub.
-   * @returns Retorna um array de objetos, cada um representando um repositório do usuário.
-   * @throws Lança um erro se a requisição falhar.
-   *
-   * @example
-   * try {
-   *   const repos = await GitHubService.getUserRepos('nomeDeUsuario');
-   *   // use repos
-   * } catch (error) {
-   *   // trate o erro
-   * }
+   * @returns {Promise<any[]>} Uma promessa contendo um array dos repositórios do usuário.
+   * @throws {Error} Lança um erro se a requisição falhar.
    */
-  static async getUserRepos(username: string) {
+  static async getUserRepos(username: string): Promise<any[]> {
     try {
-      const response = await axios.get(`/users/${username}/repos`);
-      return response.data;
+      const response = await fetchWithConfig(`/users/${username}/repos`);
+      return response;
     } catch (error) {
       throw error;
     }
   }
 
   /**
-   * @method getRepoDetails
-   * @description
    * Recupera detalhes de um repositório específico do GitHub.
-   *
    * @param {string} name - Nome do proprietário do repositório.
    * @param {string} fullName - Nome completo do repositório.
-   * @returns Retorna um objeto contendo detalhes do repositório especificado.
-   * @throws Lança um erro se a requisição falhar.
-   *
-   * @example
-   * try {
-   *   const repoDetails = await GitHubService.getRepoDetails('nomeDoProprietario', 'nomeCompletoDoRepositorio');
-   *   // use repoDetails
-   * } catch (error) {
-   *   // trate o erro
-   * }
+   * @returns {Promise<any>} Uma promessa contendo os detalhes do repositório.
+   * @throws {Error} Lança um erro se a requisição falhar.
    */
-  static async getRepoDetails(name: string, fullName: string) {
+  static async getRepoDetails(name: string, fullName: string): Promise<any> {
     try {
-      const response = await axios.get(`/repos/${name}/${fullName}`);
-      return response.data;
+      const response = await fetchWithConfig(`/repos/${name}/${fullName}`);
+      return response;
     } catch (error) {
       throw error;
     }

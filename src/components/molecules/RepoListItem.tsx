@@ -24,17 +24,19 @@ const RepoListItem: React.FC<Repository> = ({
       to={`/repo/${owner.login}/${name}`}
       className="no-underline text-black"
     >
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white shadow-sm mt-2">
-        <div className="flex items-center">
+      <div className="p-2 md:p-4 border-b border-gray-200 bg-white shadow-sm mt-2">
+        <div className="flex flex-col md:flex-row items-center justify-between">
           {isPrivate && (
-            <Icon type="fontAwesome" name={faCoffee} className="fa-lg" />
+            <div className="hidden md:flex">
+              <Icon type="fontAwesome" name={faCoffee} className="fa-lg" />
+            </div>
           )}
-          <div className="ml-2">
-            <h5 className="text-lg font-semibold">{name}</h5>
-            <p className="text-sm text-gray-600">{description}</p>
+          <div className="mt-2 md:mt-0 md:ml-2">
+            <h5 className="text-lg md:text-xl font-semibold">{name}</h5>
+            <p className="text-sm md:text-base text-gray-600">{description}</p>
           </div>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center justify-end mt-2 md:mt-0">
           {stargazers_count !== undefined
             ? renderStars(stargazers_count)
             : null}

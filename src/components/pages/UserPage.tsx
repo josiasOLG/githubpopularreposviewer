@@ -5,6 +5,7 @@ import UserPageTemplate from "../templates/UserPageTemplate"; // Importando o Us
 import InputSearch from "../atoms/InputSearch";
 import useSortableData from "../../api/hooks/useSortableData";
 import { SortCriteria } from "../../enums/SortCriteria.enum";
+import UserFormSearch from "../organisms/UserFormSearch";
 
 const UserPage: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -43,30 +44,23 @@ const UserPage: React.FC = () => {
 
   return (
     <div className="container mt-3">
-      <form onSubmit={handleSearch}>
-        <InputSearch
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Enter GitHub username"
-        />
-        <button
-          type="submit"
-          className="ml-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Search
-        </button>
-      </form>
-
+      <UserFormSearch
+        username={username}
+        setUsername={setUsername}
+        handleSearch={handleSearch}
+      />
       {loading ? (
         <p>Loading...</p>
       ) : user ? (
         <>
-          <UserPageTemplate
-            user={user}
-            repos={sortedItems}
-            handleSortChange={handleSortChange}
-            sortOptions={sortOptions}
-          />
+          <div className="container mx-auto lg:max-w-7xl">
+            <UserPageTemplate
+              user={user}
+              repos={sortedItems}
+              handleSortChange={handleSortChange}
+              sortOptions={sortOptions}
+            />
+          </div>
         </>
       ) : (
         <></>
