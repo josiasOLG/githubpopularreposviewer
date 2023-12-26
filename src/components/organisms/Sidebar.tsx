@@ -5,7 +5,7 @@ const Sidebar: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
   return (
     <div
       data-testid="sidebar"
-      className={`w-64 md:w-16 lg:w-64 bg-gray-800 text-white shadow-lg p-4 ${
+      className={`w-64 md:w-16 lg:w-64 bg-gray-800 text-white shadow-lg p-4 dark:box-shadow-white-light ${
         !isOpen && "hidden md:block"
       }`}
     >

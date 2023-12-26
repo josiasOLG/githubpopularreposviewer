@@ -25,7 +25,15 @@ const RepoListItem: React.FC<Repository> = ({
       to={`/repo/${owner.login}/${name}`}
       className="no-underline text-black"
     >
-      <div className="p-2 md:p-4 border-b border-gray-200 dark:bg-gray-900 bg-white shadow-sm mt-2">
+      <div
+        className="
+      mt-2 
+      p-2 md:p-4 
+      border-b border-gray-200 dark:border dark:border-white 
+      bg-white dark:bg-gray-900 
+      shadow-sm
+    "
+      >
         <div className="flex flex-col md:flex-row items-center justify-between">
           {isPrivate && (
             <div className="hidden md:flex">
@@ -37,7 +45,7 @@ const RepoListItem: React.FC<Repository> = ({
               {name}
             </Text>
             <Text as="p" className="text-sm md:text-base text-gray-600">
-              {name}
+              {description}
             </Text>
           </div>
         </div>
