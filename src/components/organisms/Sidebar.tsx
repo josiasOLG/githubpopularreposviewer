@@ -4,8 +4,9 @@ import NavItemMolecule from "../molecules/NavItem";
 const Sidebar: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
   return (
     <div
+      data-testid="sidebar"
       className={`w-64 md:w-16 lg:w-64 bg-gray-800 text-white shadow-lg p-4 ${
-        isOpen ? "hidden md:block" : ""
+        !isOpen && "hidden md:block"
       }`}
     >
       <nav>

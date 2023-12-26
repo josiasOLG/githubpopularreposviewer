@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Repository } from "../../models/repository/Repository";
 import Icon from "../atoms/Icon";
 import { faCoffee } from "@fortawesome/free-solid-svg-icons";
+import Text from "../atoms/Text";
 
 const renderStars = (count: number) => {
   const starCount = count > 0 ? count : 1;
@@ -24,7 +25,7 @@ const RepoListItem: React.FC<Repository> = ({
       to={`/repo/${owner.login}/${name}`}
       className="no-underline text-black"
     >
-      <div className="p-2 md:p-4 border-b border-gray-200 bg-white shadow-sm mt-2">
+      <div className="p-2 md:p-4 border-b border-gray-200 dark:bg-gray-900 bg-white shadow-sm mt-2">
         <div className="flex flex-col md:flex-row items-center justify-between">
           {isPrivate && (
             <div className="hidden md:flex">
@@ -32,8 +33,12 @@ const RepoListItem: React.FC<Repository> = ({
             </div>
           )}
           <div className="mt-2 md:mt-0 md:ml-2">
-            <h5 className="text-lg md:text-xl font-semibold">{name}</h5>
-            <p className="text-sm md:text-base text-gray-600">{description}</p>
+            <Text as="h5" className="text-lg md:text-xl font-semibold">
+              {name}
+            </Text>
+            <Text as="p" className="text-sm md:text-base text-gray-600">
+              {name}
+            </Text>
           </div>
         </div>
         <div className="flex items-center justify-end mt-2 md:mt-0">

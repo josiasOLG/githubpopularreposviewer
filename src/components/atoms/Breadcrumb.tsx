@@ -4,7 +4,10 @@ import { IBreadcrumbProps } from "../../interfaces/atom/IBreadcrumbProps";
 
 const Breadcrumb: React.FC<IBreadcrumbProps> = ({ items }) => {
   return (
-    <nav aria-label="breadcrumb" className="bg-white shadow p-2">
+    <nav
+      aria-label="breadcrumb"
+      className="bg-white dark:bg-gray-900 shadow p-2"
+    >
       <ol className="flex leading-none text-gray-800 divide-x divide-gray-400">
         {items.map((item, index) => (
           <li
@@ -13,7 +16,10 @@ const Breadcrumb: React.FC<IBreadcrumbProps> = ({ items }) => {
               index === 0 ? "pl-4 pr-2" : "px-2"
             }`}
           >
-            <Link to={item.path} className="hover:text-blue-600">
+            <Link
+              to={item.path}
+              className="hover:text-blue-600 dark:text-white"
+            >
               {item.label}
             </Link>
           </li>

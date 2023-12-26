@@ -3,7 +3,7 @@ import { Meta, Story } from "@storybook/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCoffee } from "@fortawesome/free-solid-svg-icons";
 import MaterialIcon from "@mui/material/Icon";
-import Icon from "./Icon";
+import Icon from "../Icon";
 
 export default {
   component: Icon,

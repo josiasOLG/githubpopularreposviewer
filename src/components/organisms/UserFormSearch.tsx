@@ -13,7 +13,7 @@ const UserFormSearch: React.FC<UserFormSearchProps> = ({
   handleSearch,
 }) => {
   return (
-    <form onSubmit={handleSearch} className="">
+    <form onSubmit={handleSearch} data-testid="user-form" className="">
       <InputSearch
         value={username}
         onChange={(e) => setUsername(e.target.value)}
