@@ -1,20 +1,39 @@
 import React from "react";
+import { motion } from "framer-motion";
 import NavItemMolecule from "../molecules/NavItem";
+import { faHome, faTachometerAlt } from "@fortawesome/free-solid-svg-icons";
+import "../../style/organisms/Sidebar.scss";
+
+const sidebarVariants = {
+  expanded: { width: "150px", transition: { type: "spring", stiffness: 30 } },
+  collapsed: { width: "90px", transition: { type: "spring", stiffness: 30 } },
+};
 
 const Sidebar: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
   return (
-    <div
+    <motion.div
       data-testid="sidebar"
-      className={`w-64 md:w-16 lg:w-64 bg-gray-800 text-white shadow-lg p-4 dark:box-shadow-white-light ${
-        !isOpen && "hidden md:block"
-      }`}
+      variants={sidebarVariants}
+      animate={isOpen ? "expanded" : "collapsed"}
+      className="GT-sidebar bg-gray-800 text-white shadow-lg dark:box-shadow-white-light"
     >
       <nav>
         <ul>
-          <NavItemMolecule to="/" label="Home" />
+          <NavItemMolecule
+            to="/"
+            label="Dashboard"
+            name={faTachometerAlt}
+            isOpen={isOpen}
+          />
+          <NavItemMolecule
+            to="/home"
+            label="Home"
+            name={faHome}
+            isOpen={isOpen}
+          />
         </ul>
       </nav>
-    </div>
+    </motion.div>
   );
 };
 

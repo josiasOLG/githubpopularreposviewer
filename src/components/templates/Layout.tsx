@@ -12,14 +12,16 @@ const Layout: React.FC<ILayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar isOpen={isOpen} />
-      <div className="flex flex-col flex-1">
-        <TopBar toggleSidebar={toggleSidebar} isOpen={isOpen} />
-        <main className="p-3 flex-1">{children}</main>
-        <Footer />
+    <>
+      <TopBar toggleSidebar={toggleSidebar} isOpen={isOpen} />
+      <div className="flex min-h-screen">
+        <Sidebar isOpen={isOpen} />
+        <div className="flex flex-col flex-1">
+          <main className="p-3 flex-1">{children}</main>
+          <Footer />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

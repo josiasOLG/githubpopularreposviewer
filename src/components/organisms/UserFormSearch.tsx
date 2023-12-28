@@ -1,5 +1,6 @@
 import React from "react";
 import InputSearch from "../atoms/InputSearch";
+import Button from "../atoms/Button";
 
 interface UserFormSearchProps {
   username: string;
@@ -20,12 +21,12 @@ const UserFormSearch: React.FC<UserFormSearchProps> = ({
         placeholder="Enter GitHub username"
         className="md:w-64 p-2"
       />
-      <button
+      <Button
         type="submit"
-        className="mt-2 md:mt-0 md:ml-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        className="mt-2 md:mt-0 md:ml-2 hover:bg-blue-700 py-2 px-4 GT-btn__primary"
       >
         Search
-      </button>
+      </Button>
     </form>
   );
 };

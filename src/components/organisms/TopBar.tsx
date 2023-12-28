@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "../../style/organisms/TopBar.scss";
 
 const TopBar: React.FC<{ toggleSidebar: () => void; isOpen: boolean }> = ({
   toggleSidebar,
@@ -24,16 +25,16 @@ const TopBar: React.FC<{ toggleSidebar: () => void; isOpen: boolean }> = ({
   };
 
   return (
-    <div className="flex justify-between items-center bg-gray-800 text-white p-4">
-      <div className="flex items-center space-x-2 md:hidden">
-        <button onClick={toggleSidebar} className="text-2xl">
+    <div className="flex justify-between items-center bg-gray-800 GT-topbar text-white p-4">
+      <div className="flex items-center space-x-2">
+        <button onClick={toggleSidebar} className="GT-btn text-2xl">
           {isOpen ? "\u2715" : "\u2630"}
         </button>
         <div className="logo text-xl md:text-2xl lg:text-3xl">LOGO</div>
       </div>
-      <div className="hidden md:block logo text-xl md:text-2xl lg:text-3xl">
+      {/* <div className="hidden md:block logo text-xl md:text-2xl lg:text-3xl">
         LOGO
-      </div>
+      </div> */}
       <div className="user-dropdown text-sm md:text-base lg:text-lg relative">
         <button onClick={toggleDropdown} className="flex items-center">
           Settings

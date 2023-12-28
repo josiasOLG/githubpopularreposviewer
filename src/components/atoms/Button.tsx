@@ -5,11 +5,13 @@ const Button: React.FC<IButtonProps> = ({
   children,
   onClick,
   className = "",
+  type = "button",
 }) => {
   return (
     <button
+      type={type}
       onClick={onClick}
-      className={`px-4 py-2 rounded text-white bg-blue-500 hover:bg-blue-600 ${className}`}
+      className={`px-4 py-2 rounded text-white hover:bg-blue-600 ${className}`}
     >
       {children}
     </button>

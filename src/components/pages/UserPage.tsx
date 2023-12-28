@@ -21,7 +21,6 @@ const UserPage: React.FC = () => {
   const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
-
     try {
       const userDetails = await GitHubService.getUserDetails(username);
       const userRepos = await GitHubService.getUserRepos(username);

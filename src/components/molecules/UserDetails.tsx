@@ -24,8 +24,11 @@ const UserDetails: React.FC<IUserDetailsProps> = ({
         <h2 className="text-xl md:text-2xl font-semibold">{username}</h2>
         <p className="text-sm md:text-base text-gray-600">{bio}</p>
         <div className="flex mt-2">
-          <Label text={`Followers: ${followers}`} className="mr-4" />
-          <Label text={`Following: ${following}`} />
+          <Label
+            text={`Followers: ${followers}`}
+            className="mr-4 dark:text-white"
+          />
+          <Label text={`Following: ${following}`} className="dark:text-white" />
         </div>
         <div className="flex mt-2">
           <Select options={sortOptions} onChange={handleSortChange} />

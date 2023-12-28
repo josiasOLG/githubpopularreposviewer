@@ -1,3 +1,4 @@
+@import "./style/_global.scss";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -17,7 +18,7 @@ body {
 }
 
 .dark body {
-  background-color: #1a202c; /* Cor de fundo para o tema escuro */
+  background-color: #1b263b; /* Cor de fundo para o tema escuro */
   color: #f7fafc; /* Cor do texto para o tema escuro */
 }
 
