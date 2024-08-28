@@ -1,0 +1,5 @@
+{
+  "watch": ["api/**/*.ts"],
+  "exec": "node --inspect -r ts-node/register api/app.ts",
+  "ext": "ts"
+}
