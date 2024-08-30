@@ -3,13 +3,23 @@
   "builds": [
     {
       "src": "api/index.ts",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "frameworks/**/*",
+          "adapters/**/*",
+          "config/**/*",
+          "usecases/**/*",
+          "utils/**/*",
+          "middlewares/**/*"
+        ]
+      }
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/index.js"
+      "dest": "api/index.ts"
     }
   ],
   "regions": ["gru1"]
