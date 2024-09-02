@@ -25,7 +25,17 @@ export const getUserById = async (req: Request, res: Response) => {
     const getUserById = new GetUserById(userRepository);
     const user = await getUserById.execute(userId);
     if (user) {
-      res.json(user);
+      const filteredUser = {
+        accessToken: user.accessToken,
+        active: user.active,
+        code: user.code,
+        email: user.email,
+        name: user.name,
+        points: user.points,
+        role: user.role,
+        service: user.service,
+      };
+      res.json(filteredUser);
     } else {
       res.status(404).json({ error: "User not found" });
     }
