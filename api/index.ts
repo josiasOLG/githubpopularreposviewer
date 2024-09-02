@@ -42,7 +42,11 @@ const app = express();
 app.use(bodyParser.json());
 app.use(
   cors({
-    origin: ["https://barbearia-zeta-opal.vercel.app", "http://localhost:4200"],
+    origin: [
+      "https://barbearia-zeta-opal.vercel.app",
+      "http://localhost:4200",
+      "http://localhost:3000",
+    ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     allowedHeaders: ["Content-Type", "Authorization"],
     exposedHeaders: ["access-token", "refresh-token"],
