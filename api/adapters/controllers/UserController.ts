@@ -26,6 +26,7 @@ export const getUserById = async (req: Request, res: Response) => {
     const user = await getUserById.execute(userId);
     if (user) {
       const filteredUser = {
+        id: user._id,
         active: user.active,
         code: user.code,
         email: user.email,
