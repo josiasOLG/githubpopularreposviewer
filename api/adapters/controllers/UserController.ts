@@ -29,10 +29,12 @@ export const getUserById = async (req: Request, res: Response) => {
         active: user.active,
         code: user.code,
         email: user.email,
-        name: user.name,
+        username: user.name,
         points: user.points,
-        role: user.role,
+        type: user.role,
         service: user.service,
+        image: user.image,
+        certificacoes: user.certificacoes,
       };
       res.json(filteredUser);
     } else {
