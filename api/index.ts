@@ -48,7 +48,12 @@ app.use(
       "http://localhost:3000",
     ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    allowedHeaders: ["Content-Type", "Authorization", "x-refresh-token"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-refresh-token",
+      "x-user-id",
+    ],
     exposedHeaders: ["access-token", "refresh-token"],
     credentials: true, // Se você precisar enviar cookies junto com as requisições
   })
