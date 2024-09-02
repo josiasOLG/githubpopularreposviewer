@@ -26,7 +26,6 @@ export const getUserById = async (req: Request, res: Response) => {
     const user = await getUserById.execute(userId);
     if (user) {
       const filteredUser = {
-        accessToken: user.accessToken,
         active: user.active,
         code: user.code,
         email: user.email,
