@@ -36,6 +36,7 @@ export const getUserById = async (req: Request, res: Response) => {
         service: user.service,
         image: user.image,
         certificacoes: user.certificacoes,
+        descricao: user.descricao,
       };
       res.json(filteredUser);
     } else {
