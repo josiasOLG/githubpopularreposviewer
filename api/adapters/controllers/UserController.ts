@@ -15,7 +15,7 @@ export const createUser = async (req: Request, res: Response) => {
     const user = await createUser.execute(req.body);
     res.status(201).json(user);
   } catch (error) {
-    res.status(500).json({ error: "Failed to create user" });
+    res.status(500).json({ error: "Falha ao criar usuário" });
   }
 };
 
@@ -40,10 +40,10 @@ export const getUserById = async (req: Request, res: Response) => {
       };
       res.json(filteredUser);
     } else {
-      res.status(404).json({ error: "User not found" });
+      res.status(404).json({ error: "Usuário não encontrado" });
     }
   } catch (error) {
-    res.status(500).json({ error: "Failed to get user" });
+    res.status(500).json({ error: "Falha ao obter usuário" });
   }
 };
 
@@ -52,14 +52,13 @@ export const updateUser = async (req: Request, res: Response) => {
     const userId = req.userId as string;
     const updateUser = new UpdateUser(userRepository);
     const user = await updateUser.execute(userId, req.body);
-    console.log(req.body);
     if (user) {
-      res.json(user);
+      res.status(200).json({ mensagem: "Usuário atualizado com sucesso" });
     } else {
-      res.status(404).json({ error: "User not found" });
+      res.status(404).json({ error: "Usuário não encontrado" });
     }
   } catch (error) {
-    res.status(500).json({ error: "Failed to update user" });
+    res.status(500).json({ error: "Falha ao atualizar usuário" });
   }
 };
 
@@ -70,16 +69,33 @@ export const deleteUser = async (req: Request, res: Response) => {
     await deleteUser.execute(userId);
     res.sendStatus(204);
   } catch (error) {
-    res.status(500).json({ error: "Failed to delete user" });
+    res.status(500).json({ error: "Falha ao deletar usuário" });
   }
 };
 
 export const getBarbers = async (req: Request, res: Response) => {
   try {
     const barbers = await userRepository.getBarbers();
-    res.json(barbers);
+
+    const filteredBarbers = barbers.map((barber) => ({
+      id: barber._id,
+      name: barber.name,
+      email: barber.email,
+      image: barber.image,
+      service: barber.service,
+      certificacoes: barber.certificacoes,
+      descricao: barber.descricao,
+      active: barber.active,
+      points: barber.points, // Supondo que pontos seja relevante
+      startTime: barber.startTime,
+      endTime: barber.endTime,
+      lunchStartTime: barber.lunchStartTime,
+      lunchEndTime: barber.lunchEndTime,
+    }));
+
+    res.json(filteredBarbers);
   } catch (error) {
-    res.status(500).json({ error: "Failed to get barbers" });
+    res.status(500).json({ error: "Falha ao obter barbeiros" });
   }
 };
 
@@ -87,14 +103,27 @@ export const updateService = async (req: Request, res: Response) => {
   try {
     const userId = req.params.id;
     const { service } = req.body;
+
     const user = await userRepository.updateService(userId, service);
+
     if (user) {
-      res.json(user);
+      const filteredUser = {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        service: user.service,
+        certificacoes: user.certificacoes,
+        descricao: user.descricao,
+        active: user.active,
+        points: user.points,
+      };
+      res.json(filteredUser);
     } else {
-      res.status(404).json({ error: "User not found" });
+      res.status(404).json({ error: "Usuário não encontrado" });
     }
   } catch (error) {
-    res.status(500).json({ error: "Failed to update service" });
+    res.status(500).json({ error: "Falha ao atualizar serviço" });
   }
 };
 
@@ -105,7 +134,7 @@ export const pesquisar = async (req: Request, res: Response) => {
     if (!service) {
       return res
         .status(400)
-        .json({ error: "Query and service parameters are required" });
+        .json({ error: "Parâmetros de consulta e serviço são necessários" });
     }
 
     const users = await userRepository.searchUsers(
@@ -122,7 +151,7 @@ export const pesquisar = async (req: Request, res: Response) => {
     }));
     res.json(userNames);
   } catch (error) {
-    res.status(500).json({ error: "Failed to search users" });
+    res.status(500).json({ error: "Falha ao pesquisar usuários" });
   }
 };
 
@@ -139,10 +168,10 @@ export const getBarberHoursById = async (req: Request, res: Response) => {
         interval: user.interval,
       });
     } else {
-      res.status(404).json({ error: "Barber not found" });
+      res.status(404).json({ error: "Barbeiro não encontrado" });
     }
   } catch (error) {
-    res.status(500).json({ error: "Failed to get barber hours" });
+    res.status(500).json({ error: "Falha ao obter horários do barbeiro" });
   }
 };
 
@@ -155,16 +184,16 @@ export const getActive = async (req: Request, res: Response) => {
         active: user.active,
       });
     } else {
-      res.status(404).json({ error: "Barber not found" });
+      res.status(404).json({ error: "Barbeiro não encontrado" });
     }
   } catch (error) {
-    res.status(500).json({ error: "Failed to get barber hours" });
+    res.status(500).json({ error: "Falha ao obter status do barbeiro" });
   }
 };
 
 router.post("/", createUser);
 router.get("/:id", getUserById);
-router.get("/:id/hours", getBarberHoursById); // New route for getting barber hours
+router.get("/:id/hours", getBarberHoursById); // Nova rota para obter horários de barbeiros
 router.get("/pesquisar/:service", pesquisar);
 router.put("/:id", updateUser);
 router.put("/:id/service", updateService);
