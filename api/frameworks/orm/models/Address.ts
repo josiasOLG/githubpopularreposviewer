@@ -2,30 +2,30 @@ import { Schema, model, Document } from "mongoose";
 
 export interface IAddress extends Document {
   idUser?: string;
-  number: string;
-  complement: string;
-  locality: string;
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  phoneNumber: string;
-  cpf: string;
+  number?: string;
+  complement?: string;
+  locality?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  phoneNumber?: string;
+  cpf?: string;
 }
 
 const addressSchema = new Schema({
   idUser: { type: String, required: true },
-  number: { type: String, required: true },
+  number: { type: String, required: false },
   complement: { type: String },
   locality: { type: String },
-  street: { type: String, required: true },
-  city: { type: String, required: true },
-  state: { type: String, required: true },
-  zipCode: { type: String, required: true },
-  country: { type: String, required: true },
-  phoneNumber: { type: String, required: true },
-  cpf: { type: String, required: true },
+  street: { type: String, required: false },
+  city: { type: String, required: false },
+  state: { type: String, required: false },
+  zipCode: { type: String, required: false },
+  country: { type: String, required: false },
+  phoneNumber: { type: String, required: false },
+  cpf: { type: String, required: false },
 });
 
 export const Address = model<IAddress>("Address", addressSchema);
