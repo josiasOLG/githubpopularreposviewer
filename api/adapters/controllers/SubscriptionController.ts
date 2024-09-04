@@ -153,17 +153,24 @@ export const listPlans = async (req: Request, res: Response): Promise<void> => {
 export const updateBillingInfoController = async (
   req: Request,
   res: Response
-): Promise<void> => {
+): Promise<any> => {
   const { userId, cardNumber, cardCvc, expMonth, expYear, email, nome } =
     req.body;
 
   try {
-    const address: IAddress[] | null = await addressRepository.findByIdUser(
-      userId
-    );
+    const address = await addressRepository.findByIdUser(userId);
 
-    const subscriptions =
-      await subscriptionRepository.getAllSubscriptionsByUserId(userId);
+    if (
+      !address ||
+      address.length === 0 ||
+      !address[0].cpf ||
+      !address[0].phoneNumber
+    ) {
+      return res.status(404).json({
+        error:
+          "Endereço ou número de telefone não encontrado para o usuário. Verifique se os dados estão corretos e tente novamente.",
+      });
+    }
 
     const sanitizedTaxId = address[0].cpf
       .replace(/[.\-]/g, "")
@@ -175,8 +182,8 @@ export const updateBillingInfoController = async (
     const phoneNumber = phoneNumberMatch
       ? phoneNumberMatch[1].replace(/\D/g, "")
       : "";
-    const sanitizedCardNumber = cardNumber.replace(/\s+/g, "");
 
+    const sanitizedCardNumber = cardNumber.replace(/\s+/g, "");
     const cardBrand = getCardBrand(sanitizedCardNumber);
     const cardLastFourDigits = sanitizedCardNumber.slice(-4);
     const referenceId1 = uuidv4();
@@ -201,6 +208,8 @@ export const updateBillingInfoController = async (
       },
     ];
 
+    const subscriptions =
+      await subscriptionRepository.getAllSubscriptionsByUserId(userId);
     const response = await updateCustomerBillingInfo(
       subscriptions[0].customer.id,
       billingInfo
@@ -225,7 +234,7 @@ export const updateBillingInfoController = async (
         brand: cardBrand,
         expiryMonth: expMonth,
         expiryYear: expYear,
-        cardLastFourDigits: cardNumber.slice(-4),
+        cardLastFourDigits: cardLastFourDigits,
         email: email,
         holderName: nome,
         cpf: sanitizedTaxId,
@@ -248,7 +257,7 @@ export const updateBillingInfoController = async (
 export const getCardTokenController = async (
   req: Request,
   res: Response
-): Promise<void> => {
+): Promise<any> => {
   try {
     const {
       userId,
@@ -261,44 +270,15 @@ export const getCardTokenController = async (
       number,
     } = req.body;
 
-    if (!userId) {
-      res.status(400).json({ message: "User ID is required" });
-      return;
+    if (!userId || !Types.ObjectId.isValid(userId)) {
+      return res
+        .status(400)
+        .json({ message: "Formato de ID de usuário inválido." });
     }
 
-    // Verificar se o userId é um ObjectId válido, senão, lançar um erro
-    if (!Types.ObjectId.isValid(userId)) {
-      res.status(400).json({ message: "Invalid User ID format" });
-      return;
-    }
-
-    // Buscar informações do usuário e endereço no MongoDB
-    const address: IAddress[] | null = await addressRepository.findByIdUser(
-      userId
-    );
-
-    if (!address) {
-      res.status(400).json({
-        message: `Erro: endereço não encontrado`,
-      });
-      return;
-    }
-
-    // Validação de campos obrigatórios
-    const missingFields = [];
-    if (!cardNumber) missingFields.push("cardNumber");
-    if (!cardExpiry) missingFields.push("cardExpiry");
-    if (!cardCvc) missingFields.push("cardCvc");
-    if (!holderName) missingFields.push("holderName");
-    if (!email) missingFields.push("email");
-    if (!taxId) missingFields.push("taxId");
-    if (!number) missingFields.push("number");
-
-    if (missingFields.length > 0) {
-      res.status(400).json({
-        message: `Missing required fields: ${missingFields.join(", ")}`,
-      });
-      return;
+    const address = await addressRepository.findByIdUser(userId);
+    if (!address || address.length === 0 || !address[0]) {
+      return res.status(404).json({ message: "Endereço não encontrado." });
     }
 
     const sanitizedCardNumber = cardNumber.replace(/\s+/g, "");
@@ -314,36 +294,28 @@ export const getCardTokenController = async (
       ? phoneNumberMatch[1].replace(/\D/g, "")
       : "";
 
-    const addressPostalCode = address[0].zipCode.replace(/-/g, "");
+    const addressPostalCode =
+      address[0].zipCode?.replace(/[.\-]/g, "").replace(/\s+/g, "") ?? "";
 
     const userRepository = new UserRepository();
     const user = await userRepository.getById(userId);
-
     if (!user) {
-      res.status(404).json({ message: "User not found" });
-      return;
+      return res.status(404).json({ message: "Usuário não encontrado." });
     }
 
     const referenceId1 = uuidv4();
-    const referenceId2 = uuidv4();
-
     const customerData = {
       reference_id: referenceId1,
       name: holderName,
       email: email,
       tax_id: sanitizedtaxId,
       phones: [
-        {
-          type: "MOBILE",
-          country: "55",
-          area: phoneArea,
-          number: phoneNumber,
-        },
+        { type: "MOBILE", country: "55", area: phoneArea, number: phoneNumber },
       ],
       address: {
         street: address[0].street,
         number: address[0].number,
-        complement: address[0].complement + " Complmento",
+        complement: address[0].complement || "",
         district: address[0].city,
         city: address[0].city,
         state: address[0].state,
@@ -361,9 +333,7 @@ export const getCardTokenController = async (
             brand: cardBrand,
             exp_month: expiryMonth,
             exp_year: expiryYear,
-            holder: {
-              name: holderName,
-            },
+            holder: { name: holderName },
           },
         },
       ],
@@ -374,26 +344,28 @@ export const getCardTokenController = async (
     await userRepository.update(user._id, user);
 
     const numberCard = encrypt(sanitizedCardNumber);
-    // Salvar o token do cartão no MongoDB
     const newCardToken = new CardToken({
-      userId: userId,
-      numberCard: numberCard,
-      expiryMonth: expiryMonth,
-      expiryYear: expiryYear,
-      holderName: holderName,
-      cardBrand: cardBrand,
-      cardLastFourDigits: cardLastFourDigits,
-      email: email,
+      userId,
+      numberCard,
+      expiryMonth,
+      expiryYear,
+      holderName,
+      cardBrand,
+      cardLastFourDigits,
+      email,
       cpf: sanitizedtaxId,
-      referenceId1: referenceId1,
+      referenceId1,
     });
     await newCardToken.save();
-    res.status(200).json({
-      message: "Card token saved successfully",
-    });
+
+    return res
+      .status(200)
+      .json({ message: "Token do cartão salvo com sucesso." });
   } catch (error: any) {
-    console.error("Error getting card token:", error);
-    res.status(500).json({ message: "Error getting card token", error });
+    console.error("Erro ao obter o token do cartão:", error);
+    return res
+      .status(500)
+      .json({ message: "Erro ao obter o token do cartão.", error });
   }
 };
 
@@ -646,9 +618,8 @@ export const getCustomersController = async (
       return;
     }
 
-    const sanitizedTaxId = address[0].cpf
-      .replace(/[.\-]/g, "")
-      .replace(/\s+/g, "");
+    const sanitizedTaxId =
+      address[0].cpf?.replace(/[.\-]/g, "").replace(/\s+/g, "") ?? ""; // error TS2532: Object is possibly 'undefined'.
 
     const customersResponse = await getCustomers({
       offset: offset ? parseInt(offset, 10) : undefined,
@@ -797,7 +768,7 @@ export const listInvoices = async (
 export const renewSubscription = async (
   req: Request,
   res: Response
-): Promise<void> => {
+): Promise<Response> => {
   try {
     const {
       userId,
@@ -815,30 +786,31 @@ export const renewSubscription = async (
       !expiryYear ||
       !security_code
     ) {
-      res.status(400).json({ message: "Missing required fields" });
-      return;
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
     // Buscar a assinatura existente do usuário
     const existingSubscription = await SubscriptionModel.findOne({ userId });
 
     if (!existingSubscription) {
-      res.status(404).json({ message: "Subscription not found" });
-      return;
+      return res.status(404).json({ message: "Subscription not found" });
     }
 
     const address = await addressRepository.findByIdUser(userId);
 
-    const sanitizedtaxId = address[0].cpf
-      .replace(/[.\-]/g, "")
-      .replace(/\s+/g, "");
-    const areaCodeMatch = address[0].phoneNumber.match(/\((\d{2})\)/);
+    if (!address || address.length === 0 || !address[0]) {
+      return res.status(404).json({ message: "Endereço não encontrado." });
+    }
+
+    const sanitizedTaxId =
+      address[0].cpf?.replace(/[.\-]/g, "").replace(/\s+/g, "") ?? ""; // Correção: uso de encadeamento opcional
+    const areaCodeMatch = address[0].phoneNumber?.match(/\((\d{2})\)/); // Correção: encadeamento opcional
     const phoneArea = areaCodeMatch ? areaCodeMatch[1] : "";
-    const phoneNumberMatch = address[0].phoneNumber.match(/\)\s*(\d+-\d+)/);
+    const phoneNumberMatch = address[0].phoneNumber?.match(/\)\s*(\d+-\d+)/); // Correção: encadeamento opcional
     const phoneNumber = phoneNumberMatch
       ? phoneNumberMatch[1].replace(/\D/g, "")
       : "";
-    const addressPostalCode = address[0].zipCode.replace(/-/g, "");
+    const addressPostalCode = address[0].zipCode?.replace(/-/g, "") ?? ""; // Correção: encadeamento opcional
 
     const userRepository = new UserRepository();
     const user = await userRepository.getById(userId);
@@ -886,9 +858,11 @@ export const renewSubscription = async (
       next_invoice_at: existingSubscription.next_invoice_at,
       pro_rata: existingSubscription.pro_rata,
     };
+
     console.log("payload>>", payload);
     const response = await subscribeUser(payload);
     console.log("response>>", response);
+
     // Atualizar a assinatura existente com os novos dados
     existingSubscription.idPagseguro = response.id;
     existingSubscription.reference_id = response.reference_id;
@@ -910,7 +884,6 @@ export const renewSubscription = async (
         },
       })
     );
-    console.log(8);
     existingSubscription.next_invoice_at = response.next_invoice_at;
     existingSubscription.pro_rata = response.pro_rata;
     existingSubscription.customer = response.customer;
@@ -922,15 +895,17 @@ export const renewSubscription = async (
       media: link.media,
       type: link.type,
     }));
+
     console.log(9);
     await existingSubscription.save();
-    res.status(200).json(existingSubscription);
+    return res.status(200).json(existingSubscription);
   } catch (error: any) {
-    console.log(error);
     console.error(
       "Error renewing subscription:",
       error.response?.data || error.message
     );
-    res.status(500).json({ message: "Error renewing subscription", error });
+    return res
+      .status(500)
+      .json({ message: "Error renewing subscription", error });
   }
 };

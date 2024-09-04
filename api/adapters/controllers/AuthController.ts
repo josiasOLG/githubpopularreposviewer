@@ -214,23 +214,19 @@ export const refreshToken = async (req: Request, res: Response) => {
     const refreshToken = req.body.refreshToken || req.cookies.refreshToken;
 
     if (!refreshToken) {
-      return res
-        .status(401)
-        .json({
-          error:
-            "Token de renovação não fornecido. Por favor, faça login novamente para obter um novo token.",
-        });
+      return res.status(401).json({
+        error:
+          "Token de renovação não fornecido. Por favor, faça login novamente para obter um novo token.",
+      });
     }
 
     const user = await userRepository.findByRefreshToken(refreshToken);
 
     if (!user) {
-      return res
-        .status(401)
-        .json({
-          error:
-            "Token de renovação inválido. O token fornecido não corresponde a nenhum usuário registrado.",
-        });
+      return res.status(401).json({
+        error:
+          "Token de renovação inválido. O token fornecido não corresponde a nenhum usuário registrado.",
+      });
     }
 
     const newAccessToken = jwt.sign(
@@ -252,12 +248,10 @@ export const refreshToken = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Falha ao renovar o token de acesso:", error);
-    return res
-      .status(500)
-      .json({
-        error:
-          "Falha ao renovar o token de acesso. Tente novamente mais tarde ou entre em contato com o suporte.",
-      });
+    return res.status(500).json({
+      error:
+        "Falha ao renovar o token de acesso. Tente novamente mais tarde ou entre em contato com o suporte.",
+    });
   }
 };
 
@@ -268,12 +262,10 @@ export const recoverPassword = async (req: Request, res: Response) => {
     const user = await userRepository.findByEmail(email);
     console.log(email);
     if (!user) {
-      return res
-        .status(404)
-        .json({
-          error:
-            "Usuário não encontrado. Por favor, verifique o email fornecido e tente novamente.",
-        });
+      return res.status(404).json({
+        error:
+          "Usuário não encontrado. Por favor, verifique o email fornecido e tente novamente.",
+      });
     }
 
     const newPassword = Math.random().toString(36).slice(-8); // Gerar uma nova senha
@@ -289,20 +281,16 @@ export const recoverPassword = async (req: Request, res: Response) => {
       .then(() => console.log("E-mail enviado com sucesso!"))
       .catch((error) => console.error("Erro ao enviar e-mail:", error));
 
-    res
-      .status(200)
-      .json({
-        message:
-          "Nova senha enviada para o seu email. Verifique sua caixa de entrada e siga as instruções para acessar sua conta.",
-      });
+    res.status(200).json({
+      message:
+        "Nova senha enviada para o seu email. Verifique sua caixa de entrada e siga as instruções para acessar sua conta.",
+    });
   } catch (error) {
     console.log(error);
-    res
-      .status(500)
-      .json({
-        error:
-          "Falha ao recuperar a senha. Tente novamente mais tarde ou entre em contato com o suporte.",
-      });
+    res.status(500).json({
+      error:
+        "Falha ao recuperar a senha. Tente novamente mais tarde ou entre em contato com o suporte.",
+    });
   }
 };
 
@@ -325,42 +313,33 @@ export const oauth2callback = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Erro ao obter o token de acesso", error);
-    res
-      .status(500)
-      .json({
-        error:
-          "Falha ao obter o token de acesso. Verifique as credenciais fornecidas e tente novamente.",
-      });
+    res.status(500).json({
+      error:
+        "Falha ao obter o token de acesso. Verifique as credenciais fornecidas e tente novamente.",
+    });
   }
 };
 
 export const sendVerificationCode = async (req: Request, res: Response) => {
   const { email } = req.body;
-
   try {
     const user = await userRepository.findByEmail(email);
 
     if (!user) {
-      return res
-        .status(404)
-        .json({
-          error:
-            "Usuário não encontrado. Por favor, verifique o email fornecido e tente novamente.",
-        });
+      return res.status(404).json({
+        error:
+          "Usuário não encontrado. Por favor, verifique o email fornecido e tente novamente.",
+      });
     }
-
     const address = await Address.findOne({ idUser: user._id });
 
-    if (!address) {
-      return res
-        .status(404)
-        .json({
-          error:
-            "Endereço não encontrado para o usuário. Verifique se os dados estão corretos e tente novamente.",
-        });
+    if (!address || !address.phoneNumber) {
+      return res.status(404).json({
+        error:
+          "Endereço ou número de telefone não encontrado para o usuário. Verifique se os dados estão corretos e tente novamente.",
+      });
     }
-
-    const phoneNumber = formatPhoneNumber(address.phoneNumber);
+    const phoneNumber = formatPhoneNumber(address.phoneNumber); // Agora temos certeza que phoneNumber é uma string válida
     const verificationCode = Math.floor(
       100000 + Math.random() * 900000
     ).toString();
@@ -371,21 +350,16 @@ export const sendVerificationCode = async (req: Request, res: Response) => {
       from: process.env.TWILIO_PHONE_NUMBER,
       to: phoneNumber,
     });
-
-    res
-      .status(200)
-      .json({
-        message:
-          "Código de verificação enviado com sucesso para o número de telefone associado ao seu endereço. Verifique suas mensagens e siga as instruções.",
-      });
+    res.status(200).json({
+      message:
+        "Código de verificação enviado com sucesso para o número de telefone associado ao seu endereço. Verifique suas mensagens e siga as instruções.",
+    });
   } catch (error) {
     console.error("Erro ao enviar o código de verificação:", error);
-    res
-      .status(500)
-      .json({
-        error:
-          "Falha ao enviar o código de verificação. Tente novamente mais tarde ou entre em contato com o suporte.",
-      });
+    res.status(500).json({
+      error:
+        "Falha ao enviar o código de verificação. Tente novamente mais tarde ou entre em contato com o suporte.",
+    });
   }
 };
 
@@ -395,12 +369,10 @@ export const validateCode = async (req: Request, res: Response) => {
   try {
     const user = await userRepository.findByEmail(email);
     if (!user) {
-      return res
-        .status(404)
-        .json({
-          error:
-            "Usuário não encontrado. Por favor, verifique o email fornecido e tente novamente.",
-        });
+      return res.status(404).json({
+        error:
+          "Usuário não encontrado. Por favor, verifique o email fornecido e tente novamente.",
+      });
     }
 
     if (user.verificationCode === code) {
@@ -408,29 +380,23 @@ export const validateCode = async (req: Request, res: Response) => {
       user.verificationCode = undefined; // Limpa o código de verificação
       await userRepository.update(user._id, { verificationCode: undefined });
 
-      res
-        .status(200)
-        .json({
-          message:
-            "Verificação bem-sucedida! Sua identidade foi confirmada e você pode prosseguir com o acesso à sua conta.",
-        });
+      res.status(200).json({
+        message:
+          "Verificação bem-sucedida! Sua identidade foi confirmada e você pode prosseguir com o acesso à sua conta.",
+      });
     } else {
       // Código incorreto
-      res
-        .status(401)
-        .json({
-          error:
-            "Código de verificação inválido. Por favor, verifique o código enviado e tente novamente.",
-        });
+      res.status(401).json({
+        error:
+          "Código de verificação inválido. Por favor, verifique o código enviado e tente novamente.",
+      });
     }
   } catch (error) {
     console.error("Erro ao verificar o código:", error);
-    res
-      .status(500)
-      .json({
-        error:
-          "Falha ao verificar o código. Tente novamente mais tarde ou entre em contato com o suporte.",
-      });
+    res.status(500).json({
+      error:
+        "Falha ao verificar o código. Tente novamente mais tarde ou entre em contato com o suporte.",
+    });
   }
 };
 
@@ -440,30 +406,34 @@ export const resetPassword = async (req: Request, res: Response) => {
   try {
     const user = await userRepository.findByEmail(email);
     if (!user) {
-      return res
-        .status(404)
-        .json({
-          error:
-            "Usuário não encontrado. Por favor, verifique o email fornecido e tente novamente.",
-        });
+      return res.status(404).json({
+        error:
+          "Usuário não encontrado. Por favor, verifique o email fornecido e tente novamente.",
+      });
+    }
+
+    if (!user.verificationCode) {
+      return res.status(404).json({
+        error:
+          "Codigo de validação incorreto ou não encontrado. Entre em contato com o suporte.",
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await userRepository.update(user._id, { password: hashedPassword });
+    await userRepository.update(user._id, {
+      password: hashedPassword,
+      verificationCode: "",
+    });
 
-    res
-      .status(200)
-      .json({
-        message:
-          "Senha redefinida com sucesso! Agora você pode acessar sua conta usando a nova senha.",
-      });
+    res.status(200).json({
+      message:
+        "Senha redefinida com sucesso! Agora você pode acessar sua conta usando a nova senha.",
+    });
   } catch (error) {
     console.error("Erro ao redefinir a senha:", error);
-    res
-      .status(500)
-      .json({
-        error:
-          "Falha ao redefinir a senha. Tente novamente mais tarde ou entre em contato com o suporte.",
-      });
+    res.status(500).json({
+      error:
+        "Falha ao redefinir a senha. Tente novamente mais tarde ou entre em contato com o suporte.",
+    });
   }
 };
