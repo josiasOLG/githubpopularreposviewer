@@ -64,7 +64,7 @@
     "axios": "^1.7.2",
     "base-64": "^1.0.0",
     "cross-env": "^7.0.3",
-    "nodemailer": "^6.9.14",
+    "nodemailer": "^6.9.15",
     "nodemon": "^3.1.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",

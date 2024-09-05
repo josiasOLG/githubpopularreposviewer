@@ -10,6 +10,7 @@ import twilioClient from "../../utils/twilioConfig";
 import { Address } from "../../frameworks/orm/models/Address";
 import { formatPhoneNumber } from "../../utils/utils";
 import { v4 as uuidv4 } from "uuid";
+import nodemailer from "nodemailer";
 
 const userRepository = new UserRepository();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -26,6 +27,22 @@ const oauth2Client = new OAuth2(
 const authUrl = oauth2Client.generateAuthUrl({
   access_type: "offline",
   scope: ["https://www.googleapis.com/auth/gmail.send"],
+});
+
+const gmailTransporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "oliveroliveira222@gmail.com",
+    pass: "egyb yiow vauw ghys",
+  },
+});
+
+const outlookTransporter = nodemailer.createTransport({
+  service: "hotmail",
+  auth: {
+    user: "devfrontjosias@outlook.com",
+    pass: "Josias2603@",
+  },
 });
 
 export const googleSignIn = async (req: Request, res: Response) => {
@@ -331,6 +348,7 @@ export const sendVerificationCode = async (req: Request, res: Response) => {
           "Usuário não encontrado. Por favor, verifique o email fornecido e tente novamente.",
       });
     }
+
     const address = await Address.findOne({ idUser: user._id });
 
     if (!address || !address.phoneNumber) {
@@ -339,20 +357,40 @@ export const sendVerificationCode = async (req: Request, res: Response) => {
           "Endereço ou número de telefone não encontrado para o usuário. Verifique se os dados estão corretos e tente novamente.",
       });
     }
-    const phoneNumber = formatPhoneNumber(address.phoneNumber); // Agora temos certeza que phoneNumber é uma string válida
+
     const verificationCode = Math.floor(
       100000 + Math.random() * 900000
     ).toString();
 
     await userRepository.update(user._id, { verificationCode });
-    await twilioClient.messages.create({
-      body: `Código de verificação: ${verificationCode}`,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: phoneNumber,
+
+    let transporter;
+    if (email.includes("@gmail.com")) {
+      transporter = gmailTransporter;
+    } else if (
+      email.includes("@outlook.com") ||
+      email.includes("@hotmail.com")
+    ) {
+      transporter = outlookTransporter;
+    } else {
+      return res
+        .status(400)
+        .json({ error: "Provedor de e-mail não suportado." });
+    }
+
+    // Enviar e-mail de verificação
+    await transporter.sendMail({
+      from: email.includes("@gmail.com")
+        ? '"Oliver Oliveira" <oliveroliveira222@gmail.com>'
+        : '"Dev Front Josias" <devfrontjosias@outlook.com>',
+      to: email,
+      subject: "Código de Verificação",
+      text: `Seu código de verificação é: ${verificationCode}`,
     });
+
     res.status(200).json({
       message:
-        "Código de verificação enviado com sucesso para o número de telefone associado ao seu endereço. Verifique suas mensagens e siga as instruções.",
+        "Código de verificação enviado com sucesso para o número de telefone associado e para o endereço de e-mail fornecido. Verifique suas mensagens e siga as instruções.",
     });
   } catch (error) {
     console.error("Erro ao enviar o código de verificação:", error);
