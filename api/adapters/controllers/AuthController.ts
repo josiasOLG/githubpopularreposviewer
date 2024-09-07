@@ -134,7 +134,7 @@ export const register = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const code = uuidv4().substring(0, 4); // Gerar código de 4 caracteres
     const createUser = new CreateUser(userRepository);
-    const user = await createUser.execute({
+    await createUser.execute({
       name,
       email,
       password: hashedPassword,
