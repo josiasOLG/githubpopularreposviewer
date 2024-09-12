@@ -134,13 +134,14 @@ export const register = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const code = uuidv4().substring(0, 4); // Gerar código de 4 caracteres
     const createUser = new CreateUser(userRepository);
+
     await createUser.execute({
       name,
       email,
       password: hashedPassword,
       role: role,
       code: code,
-      active: false,
+      active: role === "USER" ? true : false,
     });
     res.status(201).json({
       message:

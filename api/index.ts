@@ -31,10 +31,16 @@ import session from "express-session";
 import MongoStore from "connect-mongo";
 import subscriptionRoutes from "./adapters/routes/subscriptionRoutes";
 import serviceRoutes from "./adapters/routes/serviceRoutes";
+import appServiceRoutes from "./adapters/routes/appServiceRoutes";
 import pdfRoutes from "./adapters/routes/pdfRoutes";
 import addressRouter from "./adapters/routes/addressRoutes";
 import path from "path";
 import "./frameworks/webserver/GoogleStrategy";
+
+import moment from "moment-timezone";
+
+// Configuração do fuso horário para o Moment.js
+moment.tz.setDefault("America/Sao_Paulo");
 
 const app = express();
 
@@ -91,6 +97,7 @@ app.post("/sendVerificationCode", sendVerificationCode);
 app.post("/validateCode", validateCode);
 app.post("/oauth2callback", recoverPassword);
 app.post("/reset-password", resetPassword);
+app.use("/app-services", appServiceRoutes);
 
 // Protected routes
 app.use("/users", authMiddleware, userRouter);

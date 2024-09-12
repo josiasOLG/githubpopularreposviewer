@@ -44,7 +44,7 @@ const userSchema = new Schema({
   code: { type: String, unique: true },
   email: { type: String, required: true, unique: true, index: true }, // ÍNDICE ADICIONADO
   password: { type: String },
-  role: { type: String, enum: ["USER", "BARBER", "STYLIST"] },
+  role: { type: String },
   service: { type: String },
   phone: { type: String },
   birthDate: { type: Date },

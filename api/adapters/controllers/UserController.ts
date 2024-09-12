@@ -5,6 +5,7 @@ import { UpdateUser } from "../../usecases/user/UpdateUser";
 import { DeleteUser } from "../../usecases/user/DeleteUser";
 import { UserRepository } from "../repositories/UserRepository";
 import { Router } from "express";
+import { appServiceRepository } from "../repositories/AppServiceRepository";
 
 const userRepository = new UserRepository();
 const router = Router();
@@ -131,25 +132,47 @@ export const pesquisar = async (req: Request, res: Response) => {
   try {
     const { query } = req.query;
     const { service } = req.params;
+
     if (!service) {
       return res
         .status(400)
         .json({ error: "Parâmetros de consulta e serviço são necessários" });
     }
 
+    // Buscar o serviço pelo ID (service) recebido nos parâmetros
+    const appService = await appServiceRepository.findById(service);
+
+    // Verifica se o serviço existe e tem um nome
+    if (!appService || !appService.name) {
+      return res
+        .status(404)
+        .json({ error: "Serviço não encontrado ou não possui um nome" });
+    }
+
+    // Buscar os usuários com base no serviço encontrado
     const users = await userRepository.searchUsers(
       query as string,
       service as string
     );
+
+    // Mapear os dados de usuários para o retorno necessário
     const userNames = users.map((user) => ({
       id: user._id,
       name: user.name,
-      service: user.service,
+      service: appService.name,
       certificacoes: user.certificacoes,
       descricao: user.descricao,
       email: user.email,
     }));
-    res.json(userNames);
+
+    // Retornar um JSON contendo tanto o serviço quanto os usuários
+    res.json({
+      service: {
+        id: appService._id,
+        name: appService.name,
+      },
+      users: userNames,
+    });
   } catch (error) {
     res.status(500).json({ error: "Falha ao pesquisar usuários" });
   }
