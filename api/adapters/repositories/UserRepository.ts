@@ -49,13 +49,45 @@ export class UserRepository {
 
   async searchUsers(query: string, service: string): Promise<User[]> {
     const regex = new RegExp(query, "i");
-    const users = await UserModel.find({
-      role: service,
-      $or: [{ name: regex }, { code: regex }],
-    });
-    return users.map((user) => user.toObject());
+    const users = await UserModel.aggregate([
+      {
+        $match: {
+          role: service,
+          $or: [{ name: regex }, { code: regex }],
+          startTime: { $exists: true, $ne: null },
+          lunchStartTime: { $exists: true, $ne: null },
+          lunchEndTime: { $exists: true, $ne: null },
+          endTime: { $exists: true, $ne: null },
+          interval: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $lookup: {
+          from: "addresses", // Nome da coleção de endereços no MongoDB
+          localField: "_id",
+          foreignField: "idUser",
+          as: "address",
+        },
+      },
+      {
+        $match: {
+          address: { $ne: [] }, // Filtra apenas usuários com endereço
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          email: 1,
+          code: 1,
+          role: 1,
+          address: { $arrayElemAt: ["$address", 0] },
+        },
+      },
+    ]);
+    console.log(users);
+    return users;
   }
-
   async findByRefreshToken(refreshToken: string): Promise<User | null> {
     const user = await UserModel.findOne({ refreshToken });
     return user ? user.toObject() : null;

@@ -25,6 +25,7 @@ export const getUserById = async (req: Request, res: Response) => {
     const userId = req.userId as string; // Acessa o ID do usuário autenticado
     const getUserById = new GetUserById(userRepository);
     const user = await getUserById.execute(userId);
+
     if (user) {
       const filteredUser = {
         id: user._id,
@@ -139,7 +140,6 @@ export const pesquisar = async (req: Request, res: Response) => {
         .json({ error: "Parâmetros de consulta e serviço são necessários" });
     }
 
-    // Buscar o serviço pelo ID (service) recebido nos parâmetros
     const appService = await appServiceRepository.findById(service);
 
     // Verifica se o serviço existe e tem um nome
@@ -155,14 +155,31 @@ export const pesquisar = async (req: Request, res: Response) => {
       service as string
     );
 
-    // Mapear os dados de usuários para o retorno necessário
-    const userNames = users.map((user) => ({
+    // Mapear os dados de usuários para o retorno necessário, incluindo o endereço
+    const userNames = users.map((user: any) => ({
       id: user._id,
       name: user.name,
       service: appService.name,
       certificacoes: user.certificacoes,
       descricao: user.descricao,
       email: user.email,
+      startTime: user.startTime,
+      lunchStartTime: user.lunchStartTime,
+      lunchEndTime: user.lunchEndTime,
+      endTime: user.endTime,
+      interval: user.interval,
+      address: {
+        street: user.address.street,
+        number: user.address.number,
+        complement: user.address.complement,
+        zipCode: user.address.zipCode,
+        city: user.address.city,
+        state: user.address.state,
+        country: user.address.country,
+        cpf: user.address.cpf,
+        phoneNumber: user.address.phoneNumber,
+        locality: user.address.locality,
+      },
     }));
 
     // Retornar um JSON contendo tanto o serviço quanto os usuários
@@ -174,6 +191,7 @@ export const pesquisar = async (req: Request, res: Response) => {
       users: userNames,
     });
   } catch (error) {
+    console.error("Falha ao pesquisar usuários:", error);
     res.status(500).json({ error: "Falha ao pesquisar usuários" });
   }
 };

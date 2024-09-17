@@ -47,24 +47,38 @@ const app = express();
 // Middlewares
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
-app.use(
-  cors({
-    origin: [
-      "https://barbearia-zeta-opal.vercel.app",
-      "http://localhost:4200",
-      "http://localhost:3000",
-    ],
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "x-refresh-token",
-      "x-user-id",
-    ],
-    exposedHeaders: ["access-token", "refresh-token"],
-    credentials: true, // Se você precisar enviar cookies junto com as requisições
-  })
-);
+
+if (process.env.NODE_ENV === "development") {
+  app.use(
+    cors({
+      origin: true,
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "x-refresh-token",
+        "x-user-id",
+      ],
+      exposedHeaders: ["access-token", "refresh-token"],
+      credentials: true,
+    })
+  );
+} else {
+  app.use(
+    cors({
+      origin: ["https://barbearia-zeta-opal.vercel.app"],
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "x-refresh-token",
+        "x-user-id",
+      ],
+      exposedHeaders: ["access-token", "refresh-token"],
+      credentials: true, // Se você precisar enviar cookies junto com as requisições
+    })
+  );
+}
 
 app.use(cookieParser());
 
@@ -115,7 +129,8 @@ const startApp = async () => {
   try {
     await connectToMongoDB();
     const port = process.env.PORT || 3000;
-    app.listen(port, () => {
+    const host = process.env.HOST || "https://apib-arbearia.vercel.app";
+    app.listen(Number(port), host, () => {
       console.log(`Server is running on port ${port}`);
     });
   } catch (error) {

@@ -1,7 +1,8 @@
+import { Types } from "mongoose";
 import { Schema, model, Document } from "mongoose";
 
 export interface IAddress extends Document {
-  idUser?: string;
+  idUser?: Types.ObjectId;
   number?: string;
   complement?: string;
   locality?: string;
@@ -15,7 +16,7 @@ export interface IAddress extends Document {
 }
 
 const addressSchema = new Schema({
-  idUser: { type: String, required: true },
+  idUser: { type: Schema.Types.ObjectId, ref: "User", required: false },
   number: { type: String, required: false },
   complement: { type: String },
   locality: { type: String },

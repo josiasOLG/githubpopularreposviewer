@@ -7,6 +7,7 @@ export interface IPoint {
 }
 
 export interface IUser extends Document {
+  _id: Types.ObjectId;
   name: string;
   descricao?: string;
   certificacoes?: string;
