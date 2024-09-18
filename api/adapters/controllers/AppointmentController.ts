@@ -17,7 +17,8 @@ const router = Router();
 
 export const createAppointment = async (req: Request, res: Response) => {
   try {
-    const { barberId, date, time, service, notes, userId } = req.body;
+    const { barberId, date, time, service, notes, userId, idServico } =
+      req.body;
 
     // Verificar disponibilidade
     // const availability = await Availability.findOne({ barberId, date });
@@ -49,6 +50,7 @@ export const createAppointment = async (req: Request, res: Response) => {
       statusAprovacao: "",
       service,
       notes,
+      idServico,
     });
 
     res.status(201).json(appointment);
@@ -60,9 +62,20 @@ export const createAppointment = async (req: Request, res: Response) => {
 
 export const checkExistingAppointment = async (req: Request, res: Response) => {
   try {
-    const { userId, date } = req.body;
-    const existingAppointment = await Appointment.findOne({ userId, date });
-    res.json({ exists: existingAppointment });
+    const { userId, date, idServico } = req.body;
+    const existingAppointment = await Appointment.findOne({
+      userId,
+      date,
+      idServico,
+    });
+    if (existingAppointment) {
+      res.status(400).json({
+        error:
+          "Já existe um agendamento para o dia selecionado! vá no seu status para ver os status de agendamento",
+      });
+    } else {
+      res.status(200).json("");
+    }
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Failed to check appointment" });
@@ -164,14 +177,13 @@ export const getAllAppointmentsByUserId = async (
 ) => {
   try {
     const { userId } = req.params;
-    console.log(userId);
+    const { idServico } = req.query;
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0);
-
     const appointments = await Appointment.find({
       userId,
+      idServico,
     });
-    console.log(appointments);
     const formattedAppointments = await Promise.all(
       appointments.map(async (appointment: any) => {
         const barber = await User.findById(appointment.barberId, "name email");

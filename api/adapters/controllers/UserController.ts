@@ -168,6 +168,8 @@ export const pesquisar = async (req: Request, res: Response) => {
       lunchEndTime: user.lunchEndTime,
       endTime: user.endTime,
       interval: user.interval,
+      image: user.image,
+      role: user.role,
       address: {
         street: user.address.street,
         number: user.address.number,

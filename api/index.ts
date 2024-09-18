@@ -50,7 +50,7 @@ app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
 app.use(
   cors({
-    origin: ["https://barbearia-zeta-opal.vercel.app"],
+    origin: ["https://barbearia-zeta-opal.vercel.app", "http://localhost:3000"],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     allowedHeaders: [
       "Content-Type",

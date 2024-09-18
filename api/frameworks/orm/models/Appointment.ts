@@ -2,6 +2,7 @@ import { Schema, model, Document } from "mongoose";
 
 export interface IAppointment extends Document {
   userId?: string;
+  idServico?: string;
   barberId?: string;
   date?: Date;
   time?: string;
@@ -16,6 +17,7 @@ export interface IAppointment extends Document {
 const appointmentSchema = new Schema({
   userId: { type: String, required: true },
   barberId: { type: String, required: true },
+  idServico: { type: String, required: false },
   date: { type: Date, required: true },
   time: { type: String, required: true },
   status: { type: String, required: true, default: "pending" },
