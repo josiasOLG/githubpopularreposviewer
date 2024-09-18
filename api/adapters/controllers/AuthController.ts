@@ -141,7 +141,7 @@ export const register = async (req: Request, res: Response) => {
       password: hashedPassword,
       role: role,
       code: code,
-      active: role === "USER" ? true : false,
+      active: role === "USER" ? true : true,
     });
     res.status(201).json({
       message:
