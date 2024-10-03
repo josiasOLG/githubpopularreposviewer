@@ -17,8 +17,17 @@ const router = Router();
 
 export const createAppointment = async (req: Request, res: Response) => {
   try {
-    const { barberId, date, time, service, notes, userId, idServico } =
-      req.body;
+    const {
+      barberId,
+      date,
+      time,
+      service,
+      notes,
+      userId,
+      idServico,
+      repete,
+      allDay,
+    } = req.body;
 
     // Verificar disponibilidade
     // const availability = await Availability.findOne({ barberId, date });
@@ -51,6 +60,8 @@ export const createAppointment = async (req: Request, res: Response) => {
       service,
       notes,
       idServico,
+      repete,
+      allDay,
     });
 
     res.status(201).json(appointment);
@@ -199,6 +210,8 @@ export const getAllAppointmentsByUserId = async (
           service: appointment.service,
           notes: appointment.notes,
           statusPoint: appointment.statusPoint,
+          repete: appointment.repete,
+          allDay: appointment.allDay,
         };
       })
     );

@@ -11,4 +11,6 @@ export interface Appointment {
   service: string[];
   notes?: string;
   statusPoint?: boolean;
+  repete?: string;
+  allDay?: boolean;
 }

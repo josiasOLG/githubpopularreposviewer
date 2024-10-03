@@ -12,6 +12,8 @@ export interface IAppointment extends Document {
   service?: string[];
   notes?: string;
   statusPoint?: boolean;
+  repete?: string;
+  allDay?: boolean;
 }
 
 const appointmentSchema = new Schema({
@@ -19,13 +21,15 @@ const appointmentSchema = new Schema({
   barberId: { type: String, required: true },
   idServico: { type: String, required: false },
   date: { type: Date, required: true },
-  time: { type: String, required: true },
+  time: { type: String, required: false },
   status: { type: String, required: true, default: "pending" },
   statusAprovacao: { type: String, required: false, default: "" },
   statusMensage: { type: String, required: false, default: "" },
   service: { type: [String], required: true }, // Updated to array of strings
   notes: { type: String },
   statusPoint: { type: Boolean, required: false, default: false },
+  repete: { type: String },
+  allDay: { type: Boolean, required: false, default: false },
 });
 
 export const Appointment = model<IAppointment>(
