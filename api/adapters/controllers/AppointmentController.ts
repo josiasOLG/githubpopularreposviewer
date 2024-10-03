@@ -232,48 +232,43 @@ export const getAllAppointmentsByBarberId = async (
     const { filter } = req.query;
     const timezone = "America/Sao_Paulo"; // Ajuste para o fuso horário correto
 
-    let startDate = moment.tz(timezone).startOf("day");
-    let endDate = moment
-      .tz(timezone)
-      .set({ hour: 23, minute: 59, second: 59, millisecond: 999 });
+    let query: any = { barberId };
 
-    switch (filter) {
-      case "today":
-        startDate = moment.tz(timezone).startOf("day");
-        endDate = moment
-          .tz(timezone)
-          .set({ hour: 23, minute: 59, second: 59, millisecond: 999 });
-        break;
-      case "week":
-        startDate = moment.tz(timezone).startOf("isoWeek");
-        endDate = moment.tz(timezone).endOf("isoWeek");
-        break;
-      case "month":
-        startDate = moment.tz(timezone).startOf("month");
-        endDate = moment.tz(timezone).endOf("month");
-        break;
-      case "all":
-        startDate = moment.tz(timezone).subtract(1, "year");
-        endDate = moment.tz(timezone).add(1, "year");
-        break;
-      default:
-        startDate = moment.tz(timezone).startOf("day");
-        endDate = moment.tz(timezone).endOf("day");
-        break;
+    if (filter && filter !== "all") {
+      let startDate = moment.tz(timezone).startOf("day");
+      let endDate = moment
+        .tz(timezone)
+        .set({ hour: 23, minute: 59, second: 59, millisecond: 999 });
+
+      switch (filter) {
+        case "today":
+          startDate = moment.tz(timezone).startOf("day");
+          endDate = moment
+            .tz(timezone)
+            .set({ hour: 23, minute: 59, second: 59, millisecond: 999 });
+          break;
+        case "week":
+          startDate = moment.tz(timezone).startOf("isoWeek");
+          endDate = moment.tz(timezone).endOf("isoWeek");
+          break;
+        case "month":
+          startDate = moment.tz(timezone).startOf("month");
+          endDate = moment.tz(timezone).endOf("month");
+          break;
+        default:
+          startDate = moment.tz(timezone).startOf("day");
+          endDate = moment.tz(timezone).endOf("day");
+          break;
+      }
+
+      // Ajuste para garantir que o final do dia UTC corresponda ao final do dia no timezone São Paulo
+      const utcStartDate = startDate.toDate();
+      const utcEndDate = endDate.toDate();
+
+      query.date = { $gte: utcStartDate, $lt: utcEndDate };
     }
 
-    // Ajuste para garantir que o final do dia UTC corresponda ao final do dia no timezone São Paulo
-    const utcStartDate = startDate.toDate();
-    const utcEndDate = endDate.toDate();
-
-    console.log("utcStartDate >", utcStartDate);
-    console.log("utcEndDate >", utcEndDate);
-    console.log("filter >", filter);
-
-    const appointments = await Appointment.find({
-      barberId,
-      date: { $gte: utcStartDate, $lt: utcEndDate },
-    });
+    const appointments = await Appointment.find(query);
 
     // Fetch user details for each appointment
     const formattedAppointments = await Promise.all(
@@ -291,6 +286,8 @@ export const getAllAppointmentsByBarberId = async (
           service: appointment.service,
           notes: appointment.notes,
           statusPoint: appointment.statusPoint,
+          repete: appointment.repete,
+          allDay: appointment.allDay,
         };
       })
     );
