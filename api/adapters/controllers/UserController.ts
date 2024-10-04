@@ -6,8 +6,11 @@ import { DeleteUser } from "../../usecases/user/DeleteUser";
 import { UserRepository } from "../repositories/UserRepository";
 import { Router } from "express";
 import { appServiceRepository } from "../repositories/AppServiceRepository";
+import { AddressRepository } from "../repositories/AddressRepository";
 
 const userRepository = new UserRepository();
+const addressRepository = new AddressRepository();
+
 const router = Router();
 
 export const createUser = async (req: Request, res: Response) => {
@@ -22,11 +25,15 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const getUserById = async (req: Request, res: Response) => {
   try {
-    const userId = req.userId as string; // Acessa o ID do usuário autenticado
+    const userId = req.userId as string;
     const getUserById = new GetUserById(userRepository);
     const user = await getUserById.execute(userId);
 
     if (user) {
+      // Buscar o endereço do usuário
+      const addresses = await addressRepository.findByIdUser(userId);
+      const address = addresses.length > 0 ? addresses[0] : null;
+
       const filteredUser = {
         id: user._id,
         active: user.active,
@@ -39,10 +46,66 @@ export const getUserById = async (req: Request, res: Response) => {
         image: user.image,
         certificacoes: user.certificacoes,
         descricao: user.descricao,
+        endTime: user.endTime,
+        startTime: user.startTime,
+        lunchEndTime: user.lunchEndTime,
+        lunchStartTime: user.lunchStartTime,
+        address: address
+          ? {
+              street: address.street,
+              number: address.number,
+              complement: address.complement,
+              zipCode: address.zipCode,
+              city: address.city,
+              state: address.state,
+              country: address.country,
+              cpf: address.cpf,
+              phoneNumber: address.phoneNumber,
+              locality: address.locality,
+            }
+          : null,
       };
       res.json(filteredUser);
     } else {
       res.status(404).json({ error: "Usuário não encontrado" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Falha ao obter usuário" });
+  }
+};
+
+export const verifyUserById = async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId as string;
+    const getUserById = new GetUserById(userRepository);
+    const user = await getUserById.execute(userId);
+    console.log(user);
+    if (user) {
+      if (!user.endTime || !user.startTime) {
+        return res.status(400).json({
+          error: "HORAS TRABALHADAS IMCOMPLETO",
+          message:
+            "Por favor, preencha todos os campos obrigatórios de horas trabalhadas.",
+        });
+      }
+
+      const addresses = await addressRepository.findByIdUser(userId);
+      const address = addresses.length > 0 ? addresses[0] : null;
+
+      if (
+        !address ||
+        !address.street ||
+        !address.locality ||
+        !address.zipCode ||
+        !address.cpf ||
+        !address.phoneNumber
+      ) {
+        return res.status(406).json({
+          error: "Dados de endereço incompletos",
+          message:
+            "Por favor, preencha todos os campos obrigatórios do endereço (rua, bairro, CEP, CPF e número de telefone).",
+        });
+      }
     }
   } catch (error) {
     res.status(500).json({ error: "Falha ao obter usuário" });
@@ -236,6 +299,7 @@ export const getActive = async (req: Request, res: Response) => {
 
 router.post("/", createUser);
 router.get("/:id", getUserById);
+router.get("/verifyUserById/:id", verifyUserById);
 router.get("/:id/hours", getBarberHoursById); // Nova rota para obter horários de barbeiros
 router.get("/pesquisar/:service", pesquisar);
 router.put("/:id", updateUser);
