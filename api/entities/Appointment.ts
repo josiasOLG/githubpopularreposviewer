@@ -13,4 +13,7 @@ export interface Appointment {
   statusPoint?: boolean;
   repete?: string;
   allDay?: boolean;
+  exceptions?: Date[];
+  endRepeat?: Date;
+  color?: string;
 }

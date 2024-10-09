@@ -14,6 +14,9 @@ export interface IAppointment extends Document {
   statusPoint?: boolean;
   repete?: string;
   allDay?: boolean;
+  exceptions?: Date[];
+  endRepeat?: Date;
+  color?: string;
 }
 
 const appointmentSchema = new Schema({
@@ -30,6 +33,9 @@ const appointmentSchema = new Schema({
   statusPoint: { type: Boolean, required: false, default: false },
   repete: { type: String },
   allDay: { type: Boolean, required: false, default: false },
+  exceptions: [{ type: Date }],
+  endRepeat: { type: Date },
+  color: { type: String },
 });
 
 export const Appointment = model<IAppointment>(

@@ -27,27 +27,8 @@ export const createAppointment = async (req: Request, res: Response) => {
       idServico,
       repete,
       allDay,
+      color,
     } = req.body;
-
-    // Verificar disponibilidade
-    // const availability = await Availability.findOne({ barberId, date });
-    // console.log(availability);
-    // if (!availability) {
-    //   return res
-    //     .status(404)
-    //     .json({ error: "No availability found for this date" });
-    // }
-
-    // const timeSlot = availability.timeSlots.find(
-    //   (slot) => slot.time === time && slot.available
-    // );
-    // if (!timeSlot) {
-    //   return res.status(400).json({ error: "Time slot not available" });
-    // }
-
-    // Marcar o horário como indisponível
-    // timeSlot.available = false;
-    // await availability.save();
 
     const createAppointment = new CreateAppointment(appointmentRepository);
     const appointment = await createAppointment.execute({
@@ -62,6 +43,7 @@ export const createAppointment = async (req: Request, res: Response) => {
       idServico,
       repete,
       allDay,
+      color,
     });
 
     res.status(201).json(appointment);
@@ -114,8 +96,6 @@ export const rejectAppointment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { cancelReason } = req.body;
-    console.log(id);
-    console.log(cancelReason);
     const appointment = await appointmentRepository.update(id, {
       status: "rejeitado",
       statusAprovacao: "rejeitado",
@@ -212,11 +192,13 @@ export const getAllAppointmentsByUserId = async (
           statusPoint: appointment.statusPoint,
           repete: appointment.repete,
           allDay: appointment.allDay,
+          exceptions: appointment.exceptions,
+          endRepeat: appointment.endRepeat,
+          color: appointment.color,
         };
       })
     );
 
-    console.log(formattedAppointments);
     res.json(formattedAppointments);
   } catch (error) {
     res.status(500).json({ error: "Failed to get appointments by user ID" });
@@ -288,10 +270,13 @@ export const getAllAppointmentsByBarberId = async (
           statusPoint: appointment.statusPoint,
           repete: appointment.repete,
           allDay: appointment.allDay,
+          exceptions: appointment.exceptions,
+          endRepeat: appointment.endRepeat,
+          color: appointment.color,
         };
       })
     );
-
+    console.log("formattedAppointments >>", formattedAppointments);
     res.json(formattedAppointments);
   } catch (error) {
     res.status(500).json({ error: "Failed to get appointments by barber ID" });
@@ -373,6 +358,67 @@ export const getPoints = async (req: Request, res: Response) => {
   }
 };
 
+export const createException = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { exceptionDate } = req.body;
+
+    if (!exceptionDate) {
+      return res.status(400).json({ error: "Exception date is required" });
+    }
+
+    const appointment = await Appointment.findById(id);
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    if (!appointment.exceptions) {
+      appointment.exceptions = [];
+    }
+
+    appointment.exceptions.push(new Date(exceptionDate));
+    await appointment.save();
+
+    res.json({
+      message: "Exception added successfully",
+      appointment,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to add exception" });
+  }
+};
+
+export const updateEndRepeat = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { endRepeat } = req.body;
+
+    if (!endRepeat) {
+      return res.status(400).json({ error: "End repeat date is required" });
+    }
+
+    const appointment = await Appointment.findByIdAndUpdate(
+      id,
+      { endRepeat: new Date(endRepeat) },
+      { new: true }
+    );
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    res.json({
+      message: "End repeat date updated successfully",
+      appointment,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to update end repeat date" });
+  }
+};
+
 router.post("/", createAppointment);
 router.post("/check-appointment", checkExistingAppointment);
 router.get("/", getAllAppointments);
@@ -385,5 +431,7 @@ router.delete("/:id", deleteAppointment);
 router.put("/:id/approve", approveAppointment);
 router.put("/:id/reject", rejectAppointment);
 router.post("/add-points", addPoints);
+router.post("/:id/exception", createException);
+router.put("/:id/end-repeat", updateEndRepeat);
 
 export default router;
