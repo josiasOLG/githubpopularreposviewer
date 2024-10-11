@@ -41,12 +41,17 @@ export const getAllServicePerfils = async (req: Request, res: Response) => {
     if (!userId) {
       return res.status(400).json({ error: "O ID do usuário é obrigatório" });
     }
+
     const servicePerfils = await barberServiceRepository.getAll(
       userId as string
     );
-    if (!servicePerfils) {
-      res.status(400).json({ error: "Falha ao obter perfis de serviço" });
+
+    if (!servicePerfils || servicePerfils.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "Falha ao obter perfis de serviço" });
     }
+
     res.json(servicePerfils);
   } catch (error) {
     res.status(500).json({ error: "Falha ao obter perfis de serviço" });
