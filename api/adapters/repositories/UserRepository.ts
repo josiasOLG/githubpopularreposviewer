@@ -53,6 +53,7 @@ export class UserRepository {
       {
         $match: {
           role: service,
+          active: true,
           $or: [{ name: regex }, { code: regex }],
           startTime: { $exists: true, $ne: null },
           lunchStartTime: { $exists: true, $ne: null },
