@@ -4,6 +4,7 @@ export interface IBarberService extends Document {
   userId: Types.ObjectId;
   name: string;
   points: any;
+  maney: any;
 }
 
 const barberServiceSchema = new Schema({
@@ -13,7 +14,8 @@ const barberServiceSchema = new Schema({
     required: true,
   },
   name: { type: String, required: true },
-  points: { type: String, required: true },
+  points: { type: String, required: false },
+  maney: { type: String, required: false },
 });
 
 export const BarberServiceModel = model<IBarberService>(

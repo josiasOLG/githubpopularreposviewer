@@ -1,10 +1,12 @@
+import { Types } from "mongoose";
+
 export interface Point {
   barberId: string;
   qtd: number;
 }
 
 export interface User {
-  _id?: string;
+  _id?: string | Types.ObjectId;
   code?: any;
   name?: string;
   email?: string;

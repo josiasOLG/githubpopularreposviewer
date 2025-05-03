@@ -58,7 +58,6 @@ export class UserRepository {
           lunchStartTime: { $exists: true, $ne: null },
           lunchEndTime: { $exists: true, $ne: null },
           endTime: { $exists: true, $ne: null },
-          interval: { $exists: true, $ne: null },
         },
       },
       {
@@ -85,7 +84,6 @@ export class UserRepository {
           lunchStartTime: 1,
           lunchEndTime: 1,
           endTime: 1,
-          interval: 1,
           image: 1,
           address: { $arrayElemAt: ["$address", 0] },
         },
