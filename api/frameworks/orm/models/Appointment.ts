@@ -17,6 +17,8 @@ export interface IAppointment extends Document {
   exceptions?: Date[];
   endRepeat?: Date;
   color?: string;
+  userNumber?: string;
+  modality?: string;
 }
 
 const appointmentSchema = new Schema({
@@ -36,6 +38,8 @@ const appointmentSchema = new Schema({
   exceptions: [{ type: Date }],
   endRepeat: { type: Date },
   color: { type: String },
+  userNumber: { type: String },
+  modality: { type: String },
 });
 
 export const Appointment = model<IAppointment>(

@@ -16,4 +16,6 @@ export interface Appointment {
   exceptions?: Date[];
   endRepeat?: Date;
   color?: string;
+  userNumber?: string;
+  modality?: string;
 }

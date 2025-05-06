@@ -210,13 +210,21 @@ export const login = async (req: Request, res: Response) => {
       message:
         "Login realizado com sucesso! Você está autenticado e pode acessar os recursos protegidos.",
       user_id: user._id,
-      email: user.email,
-      display_name: user.name,
-      role: user.role,
-      descricao: user.descricao,
-      certificacoes: user.certificacoes,
-      image: user.image,
+      id: user._id,
       active: user.active,
+      code: user.code,
+      email: user.email,
+      username: user.name,
+      points: user.points,
+      type: user.role,
+      service: user.service,
+      image: user.image,
+      certificacoes: user.certificacoes,
+      descricao: user.descricao,
+      endTime: user.endTime,
+      startTime: user.startTime,
+      lunchEndTime: user.lunchEndTime,
+      lunchStartTime: user.lunchStartTime,
     });
   } catch (error: any) {
     console.error("Erro durante o login:", error);

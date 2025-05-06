@@ -32,6 +32,23 @@ export interface IUser extends Document {
   interval?: string;
   points?: IPoint[];
   active?: boolean;
+  agendaConfig?: {
+    startTime?: string;
+    endTime?: string;
+    lunchStartTime?: string;
+    lunchEndTime?: string;
+    sessionDuration?: string;
+    breakBetweenSessions?: string;
+    cancellationPolicy?: string;
+    cancellationPenaltyType?: string;
+    cancellationPenaltyValue?: string;
+    modalities?: string[];
+    workDays?: string[];
+    unavailableStart?: string;
+    unavailableEnd?: string;
+    unavailableReason?: string;
+    useSameHoursEveryday?: boolean;
+  };
 }
 
 const pointSchema = new Schema({
@@ -39,6 +56,27 @@ const pointSchema = new Schema({
   barberName: { type: String },
   qtd: { type: Number, required: true, default: 0 },
 });
+
+const agendaConfigSchema = new Schema(
+  {
+    startTime: { type: String },
+    endTime: { type: String },
+    lunchStartTime: { type: String },
+    lunchEndTime: { type: String },
+    sessionDuration: { type: String },
+    breakBetweenSessions: { type: String },
+    cancellationPolicy: { type: String },
+    cancellationPenaltyType: { type: String },
+    cancellationPenaltyValue: { type: String },
+    modalities: [{ type: String }],
+    workDays: [{ type: String }],
+    unavailableStart: { type: String },
+    unavailableEnd: { type: String },
+    unavailableReason: { type: String },
+    useSameHoursEveryday: { type: Boolean },
+  },
+  { _id: false }
+);
 
 const userSchema = new Schema({
   name: { type: String, required: true },
@@ -67,6 +105,9 @@ const userSchema = new Schema({
   active: { type: Boolean },
 });
 
+userSchema.add({
+  agendaConfig: { type: agendaConfigSchema, default: {} },
+});
 // Garantir a criação do índice ao registrar o modelo
 userSchema.index({ email: 1 });
 

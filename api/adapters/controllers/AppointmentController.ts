@@ -28,6 +28,8 @@ export const createAppointment = async (req: Request, res: Response) => {
       repete,
       allDay,
       color,
+      userNumber,
+      modality,
     } = req.body;
 
     const createAppointment = new CreateAppointment(appointmentRepository);
@@ -44,6 +46,8 @@ export const createAppointment = async (req: Request, res: Response) => {
       repete,
       allDay,
       color,
+      userNumber,
+      modality,
     });
 
     res.status(201).json(appointment);
@@ -175,12 +179,17 @@ export const getAllAppointmentsByUserId = async (
       userId,
       idServico,
     });
+
     const formattedAppointments = await Promise.all(
       appointments.map(async (appointment: any) => {
-        const barber = await User.findById(appointment.barberId, "name email");
+        const barber = await User.findById(
+          appointment.barberId,
+          "name email role"
+        );
         return {
           id: appointment._id,
           barberId: barber?.id,
+          role: barber?.role,
           barberName: barber?.name || "Unknown Barber",
           date: appointment.date,
           time: appointment.time,
@@ -198,7 +207,6 @@ export const getAllAppointmentsByUserId = async (
         };
       })
     );
-
     res.json(formattedAppointments);
   } catch (error) {
     res.status(500).json({ error: "Failed to get appointments by user ID" });

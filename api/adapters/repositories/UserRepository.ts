@@ -12,6 +12,35 @@ export class UserRepository {
     return user ? user.toObject() : null;
   }
 
+  async updateAgendaConfig(
+    userId: string,
+    agendaConfig: any
+  ): Promise<User | null> {
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      { agendaConfig },
+      { new: true }
+    );
+    return user ? user.toObject() : null;
+  }
+
+  async getAgendaConfig(userId: string): Promise<any | null> {
+    const user = await UserModel.findById(userId).select("agendaConfig");
+    return user ? user.toObject().agendaConfig : null;
+  }
+
+  async getAgendaConfigService(
+    userId: string,
+    service: string
+  ): Promise<any | null> {
+    const user = await UserModel.findOne({
+      _id: userId,
+      role: service,
+    }).select("agendaConfig");
+
+    return user ? user.toObject().agendaConfig : null;
+  }
+
   async update(userId: any, userData: Partial<User>): Promise<User | null> {
     const user = await UserModel.findByIdAndUpdate(userId, userData, {
       new: true,

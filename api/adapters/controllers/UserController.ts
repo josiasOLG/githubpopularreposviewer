@@ -23,6 +23,48 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
+export const getAgendaConfig = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id as string;
+
+    const agendaConfig = await userRepository.getAgendaConfig(userId);
+
+    if (!agendaConfig) {
+      return res
+        .status(404)
+        .json({ error: "Agenda não configurada ou usuário não encontrado" });
+    }
+
+    res.status(200).json({ agendaConfig });
+  } catch (error) {
+    console.error("Erro ao obter agendaConfig:", error);
+    res.status(500).json({ error: "Erro ao obter agendaConfig" });
+  }
+};
+
+export const getAgendaConfigService = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id as string;
+    const service = req.params.service as string;
+
+    const agendaConfig = await userRepository.getAgendaConfigService(
+      userId,
+      service
+    );
+
+    if (!agendaConfig) {
+      return res
+        .status(404)
+        .json({ error: "Agenda não configurada ou usuário não encontrado" });
+    }
+
+    res.status(200).json({ agendaConfig });
+  } catch (error) {
+    console.error("Erro ao obter agendaConfig:", error);
+    res.status(500).json({ error: "Erro ao obter agendaConfig" });
+  }
+};
+
 export const getUserById = async (req: Request, res: Response) => {
   try {
     const userId = req.userId as string;
@@ -79,7 +121,7 @@ export const verifyUserById = async (req: Request, res: Response) => {
     const userId = req.userId as string;
     const getUserById = new GetUserById(userRepository);
     const user = await getUserById.execute(userId);
-    console.log(user);
+
     if (user) {
       if (!user.endTime || !user.startTime) {
         return res.status(400).json({
@@ -124,6 +166,30 @@ export const updateUser = async (req: Request, res: Response) => {
     }
   } catch (error) {
     res.status(500).json({ error: "Falha ao atualizar usuário" });
+  }
+};
+
+export const updateAgendaConfig = async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId as string;
+    const { agendaConfig } = req.body;
+
+    if (!agendaConfig) {
+      return res.status(400).json({ error: "agendaConfig é obrigatório" });
+    }
+
+    const updatedUser = await userRepository.updateAgendaConfig(
+      userId,
+      agendaConfig
+    );
+
+    if (updatedUser) {
+      res.status(200).json({ mensagem: "Agenda atualizada com sucesso" });
+    } else {
+      res.status(404).json({ error: "Usuário não encontrado" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao atualizar agenda" });
   }
 };
 
@@ -205,20 +271,17 @@ export const pesquisar = async (req: Request, res: Response) => {
 
     const appService = await appServiceRepository.findById(service);
 
-    // Verifica se o serviço existe e tem um nome
     if (!appService || !appService.name) {
       return res
         .status(404)
         .json({ error: "Serviço não encontrado ou não possui um nome" });
     }
 
-    // Buscar os usuários com base no serviço encontrado
     const users = await userRepository.searchUsers(
       query as string,
       service as string
     );
 
-    // Mapear os dados de usuários para o retorno necessário, incluindo o endereço
     const userNames = users.map((user: any) => ({
       id: user._id,
       name: user.name,
@@ -306,5 +369,8 @@ router.put("/:id", updateUser);
 router.put("/:id/service", updateService);
 router.get("/:id/active", getActive);
 router.delete("/:id", deleteUser);
+router.put("/:id/agenda", updateAgendaConfig);
+router.get("/:id/agenda", getAgendaConfig);
+router.get("/:id/agenda/:service/service", getAgendaConfig);
 
 export default router;
