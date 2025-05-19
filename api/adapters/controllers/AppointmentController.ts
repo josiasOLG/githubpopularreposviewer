@@ -29,6 +29,7 @@ export const createAppointment = async (req: Request, res: Response) => {
       userNumber,
       modality,
       numberBarber,
+      nomeUser,
     } = req.body;
 
     const createAppointment = new CreateAppointment(appointmentRepository);
@@ -63,17 +64,18 @@ export const createAppointment = async (req: Request, res: Response) => {
 
       const msg =
         `Novo agendamento!\n` +
-        `Cliente: ${userNumber}\n` +
-        `Serviço(s): ${Array.isArray(service) ? service.join(', ') : service}\n` +
+        `Nome do Cliente: ${nomeUser}\n` +
+        `Telefone: ${userNumber}\n` +
+        `Serviço(s) que ele selecionou: ${
+          Array.isArray(service) ? service.join(', ') : service
+        }\n` +
         `Data: ${date}\n` +
         `Hora: ${time}\n` +
         `Modalidade: ${modality}\n` +
         `Observações: ${notes || 'Nenhuma'}\n` +
         `ID do Serviço: ${idServico}\n` +
         `Repetição: ${repete || 'Não'}\n` +
-        `Cor: ${color || 'Não informado'}\n` +
-        `ID do Cliente: ${userId}\n` +
-        `ID do Barbeiro: ${barberId}`;
+        `ID do Cliente: ${userId}\n`;
 
       whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
     }
