@@ -279,10 +279,12 @@ export const pesquisar = async (req: Request, res: Response) => {
 
     const users = await userRepository.searchUsers(
       query as string,
-      service as string
+      service as string,
     );
 
-    const userNames = users.map((user: any) => ({
+    const usersWithAgendaConfig = users.filter((user: any) => user.agendaConfig && Object.keys(user.agendaConfig.workDays).length > 0);
+
+    const userNames = usersWithAgendaConfig.map((user: any) => ({
       id: user._id,
       name: user.name,
       service: appService.name,
@@ -310,7 +312,6 @@ export const pesquisar = async (req: Request, res: Response) => {
       },
     }));
 
-    // Retornar um JSON contendo tanto o serviço quanto os usuários
     res.json({
       service: {
         id: appService._id,

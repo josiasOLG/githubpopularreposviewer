@@ -1,16 +1,14 @@
-import { Request, Response } from "express";
-import { CreateAppointment } from "../../usecases/appointment/CreateAppointment";
-import { GetAllAppointments } from "../../usecases/appointment/GetAllAppointments";
-import { GetAppointmentById } from "../../usecases/appointment/GetAppointmentById";
-import { UpdateAppointment } from "../../usecases/appointment/UpdateAppointment";
-import { DeleteAppointment } from "../../usecases/appointment/DeleteAppointment";
-import { AppointmentRepository } from "../repositories/AppointmentRepository";
-import { Router } from "express";
-import { Availability } from "../../frameworks/orm/models/Availability";
-import { Appointment } from "../../frameworks/orm/models/Appointment";
-import { User } from "../../frameworks/orm/models/User";
-import { Types } from "mongoose";
-import moment from "moment-timezone";
+import { Request, Response, Router } from 'express';
+import moment from 'moment-timezone';
+import { Types } from 'mongoose';
+import { Appointment } from '../../frameworks/orm/models/Appointment';
+import { User } from '../../frameworks/orm/models/User';
+import { CreateAppointment } from '../../usecases/appointment/CreateAppointment';
+import { DeleteAppointment } from '../../usecases/appointment/DeleteAppointment';
+import { GetAllAppointments } from '../../usecases/appointment/GetAllAppointments';
+import { GetAppointmentById } from '../../usecases/appointment/GetAppointmentById';
+import { UpdateAppointment } from '../../usecases/appointment/UpdateAppointment';
+import { AppointmentRepository } from '../repositories/AppointmentRepository';
 
 const appointmentRepository = new AppointmentRepository();
 const router = Router();
@@ -30,6 +28,7 @@ export const createAppointment = async (req: Request, res: Response) => {
       color,
       userNumber,
       modality,
+      numberBarber,
     } = req.body;
 
     const createAppointment = new CreateAppointment(appointmentRepository);
@@ -38,8 +37,8 @@ export const createAppointment = async (req: Request, res: Response) => {
       barberId,
       date,
       time,
-      status: "pending",
-      statusAprovacao: "",
+      status: 'pending',
+      statusAprovacao: '',
       service,
       notes,
       idServico,
@@ -49,11 +48,43 @@ export const createAppointment = async (req: Request, res: Response) => {
       userNumber,
       modality,
     });
+    let whatsappUrl = null;
 
-    res.status(201).json(appointment);
+    if (numberBarber) {
+      let phone = numberBarber.replace(/\D/g, '');
+      if (phone.length === 11 && phone.startsWith('9')) {
+        phone = '55' + phone;
+      } else if (phone.length === 11 && phone.startsWith('1')) {
+        phone = '1' + phone;
+      } else if (phone.length === 13 && phone.startsWith('55')) {
+      } else if (phone.length === 10) {
+        phone = '55' + phone;
+      }
+
+      const msg =
+        `Novo agendamento!\n` +
+        `Cliente: ${userNumber}\n` +
+        `Serviço(s): ${Array.isArray(service) ? service.join(', ') : service}\n` +
+        `Data: ${date}\n` +
+        `Hora: ${time}\n` +
+        `Modalidade: ${modality}\n` +
+        `Observações: ${notes || 'Nenhuma'}\n` +
+        `ID do Serviço: ${idServico}\n` +
+        `Repetição: ${repete || 'Não'}\n` +
+        `Cor: ${color || 'Não informado'}\n` +
+        `ID do Cliente: ${userId}\n` +
+        `ID do Barbeiro: ${barberId}`;
+
+      whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+    }
+
+    res.status(201).json({
+      ...appointment,
+      whatsappUrl,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Failed to create appointment" });
+    res.status(500).json({ error: 'Failed to create appointment' });
   }
 };
 
@@ -68,14 +99,14 @@ export const checkExistingAppointment = async (req: Request, res: Response) => {
     if (existingAppointment) {
       res.status(400).json({
         error:
-          "Já existe um agendamento para o dia selecionado! vá no seu status para ver os status de agendamento",
+          'Já existe um agendamento para o dia selecionado! vá no seu status para ver os status de agendamento',
       });
     } else {
-      res.status(200).json("");
+      res.status(200).json('');
     }
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Failed to check appointment" });
+    res.status(500).json({ error: 'Failed to check appointment' });
   }
 };
 
@@ -83,16 +114,16 @@ export const approveAppointment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const appointment = await appointmentRepository.update(id, {
-      status: "aprovado",
-      statusAprovacao: "aprovado",
+      status: 'aprovado',
+      statusAprovacao: 'aprovado',
     });
     if (appointment) {
       res.json(appointment);
     } else {
-      res.status(404).json({ error: "Appointment not found" });
+      res.status(404).json({ error: 'Appointment not found' });
     }
   } catch (error) {
-    res.status(500).json({ error: "Failed to approve appointment" });
+    res.status(500).json({ error: 'Failed to approve appointment' });
   }
 };
 
@@ -101,17 +132,17 @@ export const rejectAppointment = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { cancelReason } = req.body;
     const appointment = await appointmentRepository.update(id, {
-      status: "rejeitado",
-      statusAprovacao: "rejeitado",
+      status: 'rejeitado',
+      statusAprovacao: 'rejeitado',
       statusMensage: cancelReason,
     });
     if (appointment) {
       res.json(appointment);
     } else {
-      res.status(404).json({ error: "Appointment not found" });
+      res.status(404).json({ error: 'Appointment not found' });
     }
   } catch (error) {
-    res.status(500).json({ error: "Failed to reject appointment" });
+    res.status(500).json({ error: 'Failed to reject appointment' });
   }
 };
 
@@ -121,7 +152,7 @@ export const getAllAppointments = async (req: Request, res: Response) => {
     const appointments = await getAllAppointments.execute();
     res.json(appointments);
   } catch (error) {
-    res.status(500).json({ error: "Failed to get appointments" });
+    res.status(500).json({ error: 'Failed to get appointments' });
   }
 };
 
@@ -132,27 +163,24 @@ export const getAppointmentById = async (req: Request, res: Response) => {
     if (appointment) {
       res.json(appointment);
     } else {
-      res.status(404).json({ error: "Appointment not found" });
+      res.status(404).json({ error: 'Appointment not found' });
     }
   } catch (error) {
-    res.status(500).json({ error: "Failed to get appointment" });
+    res.status(500).json({ error: 'Failed to get appointment' });
   }
 };
 
 export const updateAppointment = async (req: Request, res: Response) => {
   try {
     const updateAppointment = new UpdateAppointment(appointmentRepository);
-    const appointment = await updateAppointment.execute(
-      req.params.id,
-      req.body
-    );
+    const appointment = await updateAppointment.execute(req.params.id, req.body);
     if (appointment) {
       res.json(appointment);
     } else {
-      res.status(404).json({ error: "Appointment not found" });
+      res.status(404).json({ error: 'Appointment not found' });
     }
   } catch (error) {
-    res.status(500).json({ error: "Failed to update appointment" });
+    res.status(500).json({ error: 'Failed to update appointment' });
   }
 };
 
@@ -162,14 +190,11 @@ export const deleteAppointment = async (req: Request, res: Response) => {
     await deleteAppointment.execute(req.params.id);
     res.sendStatus(204);
   } catch (error) {
-    res.status(500).json({ error: "Failed to delete appointment" });
+    res.status(500).json({ error: 'Failed to delete appointment' });
   }
 };
 
-export const getAllAppointmentsByUserId = async (
-  req: Request,
-  res: Response
-) => {
+export const getAllAppointmentsByUserId = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const { idServico } = req.query;
@@ -182,15 +207,12 @@ export const getAllAppointmentsByUserId = async (
 
     const formattedAppointments = await Promise.all(
       appointments.map(async (appointment: any) => {
-        const barber = await User.findById(
-          appointment.barberId,
-          "name email role"
-        );
+        const barber = await User.findById(appointment.barberId, 'name email role');
         return {
           id: appointment._id,
           barberId: barber?.id,
           role: barber?.role,
-          barberName: barber?.name || "Unknown Barber",
+          barberName: barber?.name || 'Unknown Barber',
           date: appointment.date,
           time: appointment.time,
           status: appointment.status,
@@ -205,49 +227,42 @@ export const getAllAppointmentsByUserId = async (
           endRepeat: appointment.endRepeat,
           color: appointment.color,
         };
-      })
+      }),
     );
     res.json(formattedAppointments);
   } catch (error) {
-    res.status(500).json({ error: "Failed to get appointments by user ID" });
+    res.status(500).json({ error: 'Failed to get appointments by user ID' });
   }
 };
 
-export const getAllAppointmentsByBarberId = async (
-  req: Request,
-  res: Response
-) => {
+export const getAllAppointmentsByBarberId = async (req: Request, res: Response) => {
   try {
     const { barberId } = req.params;
     const { filter } = req.query;
-    const timezone = "America/Sao_Paulo"; // Ajuste para o fuso horário correto
+    const timezone = 'America/Sao_Paulo'; // Ajuste para o fuso horário correto
 
     let query: any = { barberId };
 
-    if (filter && filter !== "all") {
-      let startDate = moment.tz(timezone).startOf("day");
-      let endDate = moment
-        .tz(timezone)
-        .set({ hour: 23, minute: 59, second: 59, millisecond: 999 });
+    if (filter && filter !== 'all') {
+      let startDate = moment.tz(timezone).startOf('day');
+      let endDate = moment.tz(timezone).set({ hour: 23, minute: 59, second: 59, millisecond: 999 });
 
       switch (filter) {
-        case "today":
-          startDate = moment.tz(timezone).startOf("day");
-          endDate = moment
-            .tz(timezone)
-            .set({ hour: 23, minute: 59, second: 59, millisecond: 999 });
+        case 'today':
+          startDate = moment.tz(timezone).startOf('day');
+          endDate = moment.tz(timezone).set({ hour: 23, minute: 59, second: 59, millisecond: 999 });
           break;
-        case "week":
-          startDate = moment.tz(timezone).startOf("isoWeek");
-          endDate = moment.tz(timezone).endOf("isoWeek");
+        case 'week':
+          startDate = moment.tz(timezone).startOf('isoWeek');
+          endDate = moment.tz(timezone).endOf('isoWeek');
           break;
-        case "month":
-          startDate = moment.tz(timezone).startOf("month");
-          endDate = moment.tz(timezone).endOf("month");
+        case 'month':
+          startDate = moment.tz(timezone).startOf('month');
+          endDate = moment.tz(timezone).endOf('month');
           break;
         default:
-          startDate = moment.tz(timezone).startOf("day");
-          endDate = moment.tz(timezone).endOf("day");
+          startDate = moment.tz(timezone).startOf('day');
+          endDate = moment.tz(timezone).endOf('day');
           break;
       }
 
@@ -263,11 +278,11 @@ export const getAllAppointmentsByBarberId = async (
     // Fetch user details for each appointment
     const formattedAppointments = await Promise.all(
       appointments.map(async (appointment: any) => {
-        const user = await User.findById(appointment.userId, "name email");
+        const user = await User.findById(appointment.userId, 'name email');
         return {
           id: appointment._id,
           userId: user?.id,
-          userName: user?.name || "Unknown User",
+          userName: user?.name || 'Unknown User',
           date: appointment.date,
           time: appointment.time,
           status: appointment.status,
@@ -282,12 +297,12 @@ export const getAllAppointmentsByBarberId = async (
           endRepeat: appointment.endRepeat,
           color: appointment.color,
         };
-      })
+      }),
     );
-    console.log("formattedAppointments >>", formattedAppointments);
+    console.log('formattedAppointments >>', formattedAppointments);
     res.json(formattedAppointments);
   } catch (error) {
-    res.status(500).json({ error: "Failed to get appointments by barber ID" });
+    res.status(500).json({ error: 'Failed to get appointments by barber ID' });
   }
 };
 
@@ -296,18 +311,16 @@ export const addPoints = async (req: Request, res: Response) => {
     const { appointmentId, userId, barberId, barberName } = req.body;
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: 'User not found' });
     }
 
     if (!Array.isArray(user.points)) {
       user.points = [];
     } else {
-      user.points = user.points.filter(
-        (point) => typeof point === "object" && point !== null
-      );
+      user.points = user.points.filter(point => typeof point === 'object' && point !== null);
     }
 
-    const pointsEntry = user.points.find((point) => {
+    const pointsEntry = user.points.find(point => {
       return point.barberId && point.barberId.toString() === barberId;
     });
 
@@ -328,21 +341,21 @@ export const addPoints = async (req: Request, res: Response) => {
     const appointment = await Appointment.findByIdAndUpdate(
       appointmentId,
       { statusPoint: true },
-      { new: true }
+      { new: true },
     );
 
     if (!appointment) {
-      return res.status(404).json({ error: "Appointment not found" });
+      return res.status(404).json({ error: 'Appointment not found' });
     }
 
     res.json({
-      message: "Points added successfully",
+      message: 'Points added successfully',
       appointment,
       user,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to add points" });
+    res.status(500).json({ error: 'Failed to add points' });
   }
 };
 
@@ -353,16 +366,16 @@ export const getPoints = async (req: Request, res: Response) => {
     const user = await User.findById(id);
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: 'User not found' });
     }
 
     res.json({
-      message: "Points retrieved successfully",
+      message: 'Points retrieved successfully',
       points: user.points,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to retrieve points" });
+    res.status(500).json({ error: 'Failed to retrieve points' });
   }
 };
 
@@ -372,13 +385,13 @@ export const createException = async (req: Request, res: Response) => {
     const { exceptionDate } = req.body;
 
     if (!exceptionDate) {
-      return res.status(400).json({ error: "Exception date is required" });
+      return res.status(400).json({ error: 'Exception date is required' });
     }
 
     const appointment = await Appointment.findById(id);
 
     if (!appointment) {
-      return res.status(404).json({ error: "Appointment not found" });
+      return res.status(404).json({ error: 'Appointment not found' });
     }
 
     if (!appointment.exceptions) {
@@ -389,12 +402,12 @@ export const createException = async (req: Request, res: Response) => {
     await appointment.save();
 
     res.json({
-      message: "Exception added successfully",
+      message: 'Exception added successfully',
       appointment,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to add exception" });
+    res.status(500).json({ error: 'Failed to add exception' });
   }
 };
 
@@ -404,42 +417,42 @@ export const updateEndRepeat = async (req: Request, res: Response) => {
     const { endRepeat } = req.body;
 
     if (!endRepeat) {
-      return res.status(400).json({ error: "End repeat date is required" });
+      return res.status(400).json({ error: 'End repeat date is required' });
     }
 
     const appointment = await Appointment.findByIdAndUpdate(
       id,
       { endRepeat: new Date(endRepeat) },
-      { new: true }
+      { new: true },
     );
 
     if (!appointment) {
-      return res.status(404).json({ error: "Appointment not found" });
+      return res.status(404).json({ error: 'Appointment not found' });
     }
 
     res.json({
-      message: "End repeat date updated successfully",
+      message: 'End repeat date updated successfully',
       appointment,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to update end repeat date" });
+    res.status(500).json({ error: 'Failed to update end repeat date' });
   }
 };
 
-router.post("/", createAppointment);
-router.post("/check-appointment", checkExistingAppointment);
-router.get("/", getAllAppointments);
-router.get("/user/:userId", getAllAppointmentsByUserId);
-router.get("/barber/:barberId", getAllAppointmentsByBarberId);
-router.get("/:id", getAppointmentById);
-router.get("/points/:id", getPoints);
-router.put("/:id", updateAppointment);
-router.delete("/:id", deleteAppointment);
-router.put("/:id/approve", approveAppointment);
-router.put("/:id/reject", rejectAppointment);
-router.post("/add-points", addPoints);
-router.post("/:id/exception", createException);
-router.put("/:id/end-repeat", updateEndRepeat);
+router.post('/', createAppointment);
+router.post('/check-appointment', checkExistingAppointment);
+router.get('/', getAllAppointments);
+router.get('/user/:userId', getAllAppointmentsByUserId);
+router.get('/barber/:barberId', getAllAppointmentsByBarberId);
+router.get('/:id', getAppointmentById);
+router.get('/points/:id', getPoints);
+router.put('/:id', updateAppointment);
+router.delete('/:id', deleteAppointment);
+router.put('/:id/approve', approveAppointment);
+router.put('/:id/reject', rejectAppointment);
+router.post('/add-points', addPoints);
+router.post('/:id/exception', createException);
+router.put('/:id/end-repeat', updateEndRepeat);
 
 export default router;

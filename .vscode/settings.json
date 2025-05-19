@@ -1,0 +1,61 @@
+{
+  // Habilita o formatador ao salvar
+  "editor.formatOnSave": true,
+
+  // Especifica o Prettier como formatador padrão
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // Formatação por tipo de linguagem
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // Prettier configurações globais
+  "prettier.requireConfig": false,
+  "prettier.singleQuote": true,
+  "prettier.trailingComma": "all",
+  "prettier.tabWidth": 2,
+  "prettier.useTabs": false,
+  "prettier.printWidth": 100,
+  "prettier.bracketSpacing": true,
+  "prettier.arrowParens": "avoid",
+  "prettier.endOfLine": "lf",
+
+  // Remove imports não usados ao salvar (via extensão ou plugin)
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true,
+    "source.fixAll": true
+  },
+
+  // Atalhos de qualidade de vida
+  "files.autoSave": "onWindowChange",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.associations": {
+    "*.component.html": "html",
+    "*.component.scss": "scss",
+    "*.component.ts": "typescript"
+  },
+
+  // Integração recomendada com Angular
+  "angular.enable-strict-mode-prompt": false,
+
+  // Excluir arquivos desnecessários da busca e indexação
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.angular": true
+  }
+}

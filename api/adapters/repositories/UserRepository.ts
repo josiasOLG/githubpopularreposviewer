@@ -111,6 +111,7 @@ export class UserRepository {
           code: 1,
           role: 1,
           startTime: 1,
+          agendaConfig: 1,
           lunchStartTime: 1,
           lunchEndTime: 1,
           endTime: 1,
@@ -119,7 +120,7 @@ export class UserRepository {
         },
       },
     ]);
-    console.log(users);
+
     return users;
   }
   async findByRefreshToken(refreshToken: string): Promise<User | null> {
