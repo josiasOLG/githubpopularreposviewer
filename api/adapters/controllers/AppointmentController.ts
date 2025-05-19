@@ -8,6 +8,7 @@ import { DeleteAppointment } from '../../usecases/appointment/DeleteAppointment'
 import { GetAllAppointments } from '../../usecases/appointment/GetAllAppointments';
 import { GetAppointmentById } from '../../usecases/appointment/GetAppointmentById';
 import { UpdateAppointment } from '../../usecases/appointment/UpdateAppointment';
+import { buildWhatsAppMessageForBusiness, buildWhatsAppUrl } from '../../utils/utils';
 import { AppointmentRepository } from '../repositories/AppointmentRepository';
 
 const appointmentRepository = new AppointmentRepository();
@@ -49,37 +50,27 @@ export const createAppointment = async (req: Request, res: Response) => {
       userNumber,
       modality,
     });
+
     let whatsappUrl = null;
 
     if (numberBarber) {
-      let phone = numberBarber.replace(/\D/g, '');
-      if (phone.length === 11 && phone.startsWith('9')) {
-        phone = '55' + phone;
-      } else if (phone.length === 11 && phone.startsWith('1')) {
-        phone = '1' + phone;
-      } else if (phone.length === 13 && phone.startsWith('55')) {
-      } else if (phone.length === 10) {
-        phone = '55' + phone;
-      }
-
-      const msg =
-        `Novo agendamento!\n` +
-        `Nome do Cliente: ${nomeUser}\n` +
-        `Telefone: ${userNumber}\n` +
-        `Serviço(s) que ele selecionou: ${
-          Array.isArray(service) ? service.join(', ') : service
-        }\n` +
-        `Data: ${date}\n` +
-        `Hora: ${time}\n` +
-        `Modalidade: ${modality}\n` +
-        `Observações: ${notes || 'Nenhuma'}\n` +
-        `ID do Serviço: ${idServico}\n` +
-        `Repetição: ${repete || 'Não'}\n` +
-        `ID do Cliente: ${userId}\n`;
-
-      whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+      const msg = buildWhatsAppMessageForBusiness({
+        nomeUser,
+        userNumber,
+        service,
+        date,
+        time,
+        modality,
+        notes,
+        idServico,
+        repete,
+        userId,
+        barberId,
+        color,
+      });
+      whatsappUrl = buildWhatsAppUrl(numberBarber, msg);
     }
-
+    console.log(whatsappUrl);
     res.status(201).json({
       ...appointment,
       whatsappUrl,
