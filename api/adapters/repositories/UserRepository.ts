@@ -66,7 +66,7 @@ export class UserRepository {
     const pipeline: any[] = [
       {
         $match: {
-          $or: [{ role: service }, { service: service }],
+          $or: [{ role: service }],
           active: true,
         },
       },
