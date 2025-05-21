@@ -112,6 +112,21 @@ app.use(logService.errorMiddleware('api'));
 
 // Middleware para lidar com rotas não encontradas
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  // Registrar a tentativa de acesso a um endpoint não existente
+  logService
+    .logWarning(
+      `Tentativa de acesso a endpoint não encontrado: ${req.method} ${req.originalUrl}`,
+      'api',
+      {
+        ip: req.ip,
+        headers: req.headers,
+        params: req.params,
+        query: req.query,
+        body: req.body,
+      },
+    )
+    .catch(err => console.error('Erro ao registrar log de endpoint não encontrado:', err));
+
   res.status(404).json({ error: 'Endpoint não encontrado.' });
 });
 
