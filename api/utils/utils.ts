@@ -63,7 +63,7 @@ export function buildWhatsAppMessageForBusiness(data: AppointmentWhatsAppData): 
     `🏠 *Modalidade*: ${data.modality}${recurrenceText}\n\n` +
     `📝 *Observações do cliente*:\n${data.notes || 'Nenhuma observação adicional.'}\n\n` +
     `Por favor, confirme este agendamento com o cliente o mais breve possível.` +
-    `\n\nAtenciosamente,\nSistema de Agendamentos da Barbearia`
+    `\n\nAtenciosamente,\nSistema de Agendamentos da stilovox`
   );
 }
 
