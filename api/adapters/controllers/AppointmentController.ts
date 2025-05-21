@@ -69,8 +69,8 @@ export const createAppointment = async (req: Request, res: Response) => {
         notes,
         idServico,
         repete,
-        userId,
-        barberId,
+        userId: '', // Removed from the message
+        barberId: '', // Removed from the message
         color,
       });
       whatsappUrl = buildWhatsAppUrl(numberBarber, msg);

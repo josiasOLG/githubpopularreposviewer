@@ -34,22 +34,36 @@ export function encrypt(text: string): string {
 }
 
 export function buildWhatsAppMessageForBusiness(data: AppointmentWhatsAppData): string {
+  // Format the date nicely
+  const dateObj = new Date(data.date);
+  const formattedDate = dateObj.toLocaleDateString('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'America/Sao_Paulo',
+  });
+
+  // Format service display
+  const serviceDisplay = Array.isArray(data.service) ? data.service.join(', ') : data.service;
+
+  // Create the recurrence text if applicable
+  let recurrenceText = '';
+  if (data.repete && data.repete !== 'Não' && data.repete !== 'não') {
+    recurrenceText = `\n\n📅 *Recorrência*: ${data.repete}`;
+  }
+
   return (
-    `Novo agendamento!\n` +
-    `Nome do Cliente: ${data.nomeUser}\n` +
-    `Telefone: ${data.userNumber}\n` +
-    `Serviço(s) que ele selecionou: ${
-      Array.isArray(data.service) ? data.service.join(', ') : data.service
-    }\n` +
-    `Data: ${data.date}\n` +
-    `Hora: ${data.time}\n` +
-    `Modalidade: ${data.modality}\n` +
-    `Observações: ${data.notes || 'Nenhuma'}\n` +
-    `ID do Serviço: ${data.idServico}\n` +
-    `Repetição: ${data.repete || 'Não'}\n` +
-    `ID do Cliente: ${data.userId}\n` +
-    (data.barberId ? `ID do Barbeiro: ${data.barberId}\n` : '') +
-    (data.color ? `Cor: ${data.color}\n` : '')
+    `🎉 *NOVO AGENDAMENTO!* 🎉\n\n` +
+    `Olá! Você recebeu um novo agendamento através do seu sistema de barbearia.\n\n` +
+    `👤 *Cliente*: ${data.nomeUser}\n` +
+    `📱 *Contato*: ${data.userNumber}\n\n` +
+    `🛠️ *Serviço(s)*: ${serviceDisplay}\n` +
+    `📆 *Data*: ${formattedDate}\n` +
+    `⏰ *Horário*: ${data.time}\n` +
+    `🏠 *Modalidade*: ${data.modality}${recurrenceText}\n\n` +
+    `📝 *Observações do cliente*:\n${data.notes || 'Nenhuma observação adicional.'}\n\n` +
+    `Por favor, confirme este agendamento com o cliente o mais breve possível.` +
+    `\n\nAtenciosamente,\nSistema de Agendamentos da Barbearia`
   );
 }
 
