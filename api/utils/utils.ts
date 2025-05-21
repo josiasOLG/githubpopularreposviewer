@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import moment from 'moment-timezone';
+import { Appointment } from '../frameworks/orm/models/Appointment';
 
 const CRYPTO_KEY = process.env.CRYPTO_KEY || '';
 const CRYPTO_IV = process.env.CRYPTO_IV || '';
@@ -176,4 +178,74 @@ export function formatErrorObject(obj: any, indent = ''): string {
 export const formatPhoneNumber = (phoneNumber: string): string => {
   const cleaned = phoneNumber.replace(/\D/g, '');
   return `+55${cleaned}`;
+};
+
+export const generateAvailableTimeSlots = async (
+  startTime: string,
+  endTime: string,
+  sessionDuration: string,
+  breakBetweenSessions: string,
+  date: string,
+  barberId: string,
+  lunchStartTime?: string,
+  lunchEndTime?: string,
+): Promise<string[]> => {
+  const slots: string[] = [];
+
+  const convertToMinutes = (timeString: string): number => {
+    if (timeString.includes(':')) {
+      const [hours, minutes] = timeString.split(':').map(Number);
+      return hours * 60 + minutes;
+    }
+    return parseInt(timeString, 10);
+  };
+
+  const session = convertToMinutes(sessionDuration);
+  const breakTime = convertToMinutes(breakBetweenSessions);
+
+  let current = moment(startTime, 'HH:mm');
+  const end = moment(endTime, 'HH:mm');
+
+  const lunchStart = lunchStartTime ? moment(lunchStartTime, 'HH:mm') : null;
+  const lunchEnd = lunchEndTime ? moment(lunchEndTime, 'HH:mm') : null;
+
+  const hasLunch = lunchStart && lunchEnd;
+
+  const potentialSlots: string[] = [];
+
+  while (current.clone().add(session, 'minutes').isSameOrBefore(end)) {
+    const sessionEnd = current.clone().add(session, 'minutes');
+
+    if (hasLunch && sessionEnd.isAfter(lunchStart!) && current.isBefore(lunchEnd!)) {
+      current = lunchEnd!.clone();
+      continue;
+    }
+
+    potentialSlots.push(current.format('HH:mm'));
+    current.add(session + breakTime, 'minutes');
+  }
+
+  const parsedDate = moment(date);
+
+  if (!parsedDate.isValid()) {
+    return []; // Retorna array vazio se a data for inválida
+  }
+
+  const startOfDay = parsedDate.clone().startOf('day').toDate();
+  const endOfDay = parsedDate.clone().endOf('day').toDate();
+
+  const existingAppointments = await Appointment.find({
+    barberId,
+    date: {
+      $gte: startOfDay,
+      $lte: endOfDay,
+    },
+    status: { $ne: 'rejeitado' },
+  });
+
+  const bookedTimeSlots = existingAppointments.map(appointment => appointment.time);
+
+  const availableSlots = potentialSlots.filter(slot => !bookedTimeSlots.includes(slot));
+
+  return availableSlots;
 };

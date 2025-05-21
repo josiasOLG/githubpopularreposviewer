@@ -3,6 +3,7 @@ import { CreateUser } from '../../usecases/user/CreateUser';
 import { DeleteUser } from '../../usecases/user/DeleteUser';
 import { GetUserById } from '../../usecases/user/GetUserById';
 import { UpdateUser } from '../../usecases/user/UpdateUser';
+import { generateAvailableTimeSlots } from '../../utils/utils';
 import { AddressRepository } from '../repositories/AddressRepository';
 import { appServiceRepository } from '../repositories/AppServiceRepository';
 import { UserRepository } from '../repositories/UserRepository';
@@ -22,16 +23,61 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
+export const getDisponibleTimeSlots = async (req: Request, res: Response) => {
+  try {
+    const { barberId, data } = req.body;
+
+    if (!barberId) {
+      return res.status(400).json({ error: 'ID do profissional é obrigatório' });
+    }
+    const selectedDate = data || new Date().toISOString().split('T')[0];
+    const agendaConfig = await userRepository.getAgendaConfig(barberId);
+    if (!agendaConfig) {
+      return res
+        .status(404)
+        .json({ error: 'Agenda não configurada ou profissional não encontrado' });
+    }
+
+    if (
+      !agendaConfig.startTime ||
+      !agendaConfig.endTime ||
+      !agendaConfig.sessionDuration ||
+      !agendaConfig.breakBetweenSessions
+    ) {
+      return res.status(400).json({
+        error: 'Configuração de agenda incompleta',
+        message: 'O profissional não configurou todos os parâmetros necessários da agenda',
+      });
+    }
+
+    const availableSlots = await generateAvailableTimeSlots(
+      agendaConfig.startTime,
+      agendaConfig.endTime,
+      agendaConfig.sessionDuration,
+      agendaConfig.breakBetweenSessions,
+      selectedDate,
+      barberId,
+      agendaConfig.lunchStartTime,
+      agendaConfig.lunchEndTime,
+    );
+
+    return res.status(200).json({
+      availableTimeSlots: availableSlots,
+      date: selectedDate,
+    });
+  } catch (error) {
+    console.error('Erro ao obter horários disponíveis:', error);
+    res.status(500).json({ error: 'Erro ao obter horários disponíveis' });
+  }
+};
+
 export const getAgendaConfig = async (req: Request, res: Response) => {
   try {
     const userId = req.params.id as string;
-
     const agendaConfig = await userRepository.getAgendaConfig(userId);
-
     if (!agendaConfig) {
       return res.status(404).json({ error: 'Agenda não configurada ou usuário não encontrado' });
     }
-
     res.status(200).json({ agendaConfig });
   } catch (error) {
     console.error('Erro ao obter agendaConfig:', error);
@@ -361,5 +407,6 @@ router.delete('/:id', deleteUser);
 router.put('/:id/agenda', updateAgendaConfig);
 router.get('/:id/agenda', getAgendaConfig);
 router.get('/:id/agenda/:service/service', getAgendaConfig);
+router.post('/agenda/horas', getDisponibleTimeSlots);
 
 export default router;
