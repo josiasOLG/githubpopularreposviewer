@@ -5,7 +5,6 @@ import { google } from 'googleapis';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
-import { Address } from '../../frameworks/orm/models/Address';
 import { CreateUser } from '../../usecases/user/CreateUser';
 import { sendEmail } from '../../utils/mailer';
 import { IsValidEmail } from '../../utils/utils';
@@ -355,15 +354,6 @@ export const sendVerificationCode = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({
         error: 'Usuário não encontrado. Por favor, verifique o email fornecido e tente novamente.',
-      });
-    }
-
-    const address = await Address.findOne({ idUser: user._id });
-
-    if (!address || !address.phoneNumber) {
-      return res.status(404).json({
-        error:
-          'Endereço ou número de telefone não encontrado para o usuário. Verifique se os dados estão corretos e tente novamente.',
       });
     }
 
