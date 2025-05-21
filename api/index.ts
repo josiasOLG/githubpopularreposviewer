@@ -1,21 +1,19 @@
 // vercel-max-duration: 10
-import { connectToMongoDB } from "./frameworks/database/mongodb";
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
+import { connectToMongoDB } from './frameworks/database/mongodb';
 dotenv.config();
 
-import express from "express";
-import bodyParser from "body-parser";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import swaggerUi from "swagger-ui-express";
-import swaggerFile from "./config/swagger"; // Ajuste o caminho conforme necessário
+import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import express from 'express';
+import swaggerUi from 'swagger-ui-express';
+import swaggerFile from './config/swagger'; // Ajuste o caminho conforme necessário
 
-import userRouter from "./adapters/controllers/UserController";
-import barberServiceRoutes from "./adapters/controllers/BarberServiceController";
-import qrCodeRoutes from "./adapters/routes/qrCodeRoutes";
-import barberRouter from "./adapters/controllers/BarberController";
-import appointmentRouter from "./adapters/controllers/AppointmentController";
-import notificationRouter from "./adapters/controllers/NotificationController";
+import MongoStore from 'connect-mongo';
+import session from 'express-session';
+import path from 'path';
+import appointmentRouter from './adapters/controllers/AppointmentController';
 import {
   googleSignIn,
   login,
@@ -25,42 +23,39 @@ import {
   resetPassword,
   sendVerificationCode,
   validateCode,
-} from "./adapters/controllers/AuthController";
-import { authMiddleware } from "./middlewares/authMiddleware";
-import session from "express-session";
-import MongoStore from "connect-mongo";
-import subscriptionRoutes from "./adapters/routes/subscriptionRoutes";
-import serviceRoutes from "./adapters/routes/serviceRoutes";
-import appServiceRoutes from "./adapters/routes/appServiceRoutes";
-import pdfRoutes from "./adapters/routes/pdfRoutes";
-import addressRouter from "./adapters/routes/addressRoutes";
-import path from "path";
-import "./frameworks/webserver/GoogleStrategy";
+} from './adapters/controllers/AuthController';
+import barberRouter from './adapters/controllers/BarberController';
+import barberServiceRoutes from './adapters/controllers/BarberServiceController';
+import notificationRouter from './adapters/controllers/NotificationController';
+import userRouter from './adapters/controllers/UserController';
+import addressRouter from './adapters/routes/addressRoutes';
+import appServiceRoutes from './adapters/routes/appServiceRoutes';
+import pdfRoutes from './adapters/routes/pdfRoutes';
+import qrCodeRoutes from './adapters/routes/qrCodeRoutes';
+import serviceRoutes from './adapters/routes/serviceRoutes';
+import subscriptionRoutes from './adapters/routes/subscriptionRoutes';
+import './frameworks/webserver/GoogleStrategy';
+import { authMiddleware } from './middlewares/authMiddleware';
 
-import moment from "moment-timezone";
+import moment from 'moment-timezone';
 
 // Configuração do fuso horário para o Moment.js
-moment.tz.setDefault("America/Sao_Paulo");
+moment.tz.setDefault('America/Sao_Paulo');
 
 const app = express();
 
 // Middlewares
-app.use(bodyParser.json({ limit: "50mb" }));
-app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(
   cors({
-    origin: ["https://voxs.vercel.app", "http://localhost:3000"],
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "x-refresh-token",
-      "x-user-id",
-    ],
-    exposedHeaders: ["access-token", "refresh-token"],
+    origin: ['https://voxs.vercel.app', 'http://localhost:3000', 'http://192.168.18.5:3000'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token', 'x-user-id'],
+    exposedHeaders: ['access-token', 'refresh-token'],
     credentials: true,
-  })
+  }),
 );
 
 app.use(cookieParser());
@@ -72,41 +67,38 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.DB_CONNECTION_STRING,
-      collectionName: "sessions",
+      collectionName: 'sessions',
     }),
-  })
+  }),
 );
 
 // Middlewares
-app.use("/api-docs", express.static(path.join(__dirname, "swagger-static")));
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
-app.use(
-  "/swagger-static",
-  express.static(path.join(__dirname, "node_modules/swagger-ui-dist"))
-);
+app.use('/api-docs', express.static(path.join(__dirname, 'swagger-static')));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
+app.use('/swagger-static', express.static(path.join(__dirname, 'node_modules/swagger-ui-dist')));
 
 // Public routes
-app.post("/register", register);
-app.post("/login", login);
-app.post("/refresh-token", refreshToken);
-app.post("/auth/google", googleSignIn);
-app.post("/sendVerificationCode", sendVerificationCode);
-app.post("/validateCode", validateCode);
-app.post("/oauth2callback", recoverPassword);
-app.post("/reset-password", resetPassword);
-app.use("/app-services", appServiceRoutes);
+app.post('/register', register);
+app.post('/login', login);
+app.post('/refresh-token', refreshToken);
+app.post('/auth/google', googleSignIn);
+app.post('/sendVerificationCode', sendVerificationCode);
+app.post('/validateCode', validateCode);
+app.post('/oauth2callback', recoverPassword);
+app.post('/reset-password', resetPassword);
+app.use('/app-services', appServiceRoutes);
 
 // Protected routes
-app.use("/users", authMiddleware, userRouter);
-app.use("/barbers", authMiddleware, barberRouter);
-app.use("/appointments", authMiddleware, appointmentRouter);
-app.use("/notifications", authMiddleware, notificationRouter);
-app.use("/barber-services", authMiddleware, barberServiceRoutes);
-app.use("/qrcode", authMiddleware, qrCodeRoutes);
-app.use("/addresses", authMiddleware, addressRouter);
-app.use("/subscription", subscriptionRoutes);
-app.use("/services", authMiddleware, serviceRoutes);
-app.use("/pdf", authMiddleware, pdfRoutes);
+app.use('/users', authMiddleware, userRouter);
+app.use('/barbers', authMiddleware, barberRouter);
+app.use('/appointments', authMiddleware, appointmentRouter);
+app.use('/notifications', authMiddleware, notificationRouter);
+app.use('/barber-services', authMiddleware, barberServiceRoutes);
+app.use('/qrcode', authMiddleware, qrCodeRoutes);
+app.use('/addresses', authMiddleware, addressRouter);
+app.use('/subscription', subscriptionRoutes);
+app.use('/services', authMiddleware, serviceRoutes);
+app.use('/pdf', authMiddleware, pdfRoutes);
 
 const startApp = async () => {
   try {
@@ -116,7 +108,7 @@ const startApp = async () => {
       console.log(`Server is running on port ${port}`);
     });
   } catch (error) {
-    console.error("Error starting the application:", error);
+    console.error('Error starting the application:', error);
     process.exit(1);
   }
 };

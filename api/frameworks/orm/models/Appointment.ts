@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import { Document, Schema, model } from 'mongoose';
 
 export interface IAppointment extends Document {
   userId?: string;
@@ -19,6 +19,8 @@ export interface IAppointment extends Document {
   color?: string;
   userNumber?: string;
   modality?: string;
+  create?: Date;
+  update?: Date;
 }
 
 const appointmentSchema = new Schema({
@@ -27,9 +29,9 @@ const appointmentSchema = new Schema({
   idServico: { type: String, required: false },
   date: { type: Date, required: true },
   time: { type: String, required: false },
-  status: { type: String, required: true, default: "pending" },
-  statusAprovacao: { type: String, required: false, default: "" },
-  statusMensage: { type: String, required: false, default: "" },
+  status: { type: String, required: true, default: 'pending' },
+  statusAprovacao: { type: String, required: false, default: '' },
+  statusMensage: { type: String, required: false, default: '' },
   service: { type: [String], required: true }, // Updated to array of strings
   notes: { type: String },
   statusPoint: { type: Boolean, required: false, default: false },
@@ -40,9 +42,8 @@ const appointmentSchema = new Schema({
   color: { type: String },
   userNumber: { type: String },
   modality: { type: String },
+  create: { type: Date, default: Date.now },
+  update: { type: Date, default: Date.now },
 });
 
-export const Appointment = model<IAppointment>(
-  "Appointment",
-  appointmentSchema
-);
+export const Appointment = model<IAppointment>('Appointment', appointmentSchema);

@@ -1,16 +1,15 @@
-import { Request, Response } from 'express';
-import { CreateUser } from '../../usecases/user/CreateUser';
-import { UserRepository } from '../repositories/UserRepository';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import { Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
-import { sendEmail } from '../../utils/mailer';
 import { google } from 'googleapis';
-import twilioClient from '../../utils/twilioConfig';
-import { Address } from '../../frameworks/orm/models/Address';
-import { formatPhoneNumber } from '../../utils/utils';
-import { v4 as uuidv4 } from 'uuid';
+import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
+import { v4 as uuidv4 } from 'uuid';
+import { Address } from '../../frameworks/orm/models/Address';
+import { CreateUser } from '../../usecases/user/CreateUser';
+import { sendEmail } from '../../utils/mailer';
+import { IsValidEmail } from '../../utils/utils';
+import { UserRepository } from '../repositories/UserRepository';
 
 const userRepository = new UserRepository();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -119,7 +118,16 @@ export const googleSignIn = async (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role } = req.body;
+    let { name, email, password, role } = req.body;
+
+    email = (email || '').trim().toLowerCase();
+
+    if (!IsValidEmail(email)) {
+      return res.status(400).json({
+        message: 'Email inválido. Por favor, forneça um email válido.',
+      });
+    }
+
     const existingUser = await userRepository.findByEmail(email);
     if (existingUser) {
       return res.status(400).json({
@@ -155,7 +163,16 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+
+    email = (email || '').trim().toLowerCase();
+
+    if (!IsValidEmail(email)) {
+      return res.status(400).json({
+        error: 'Email inválido. Por favor, forneça um email válido.',
+      });
+    }
+
     if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
       return res.status(400).json({
         error:

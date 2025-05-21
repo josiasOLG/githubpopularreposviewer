@@ -8,7 +8,12 @@ import { DeleteAppointment } from '../../usecases/appointment/DeleteAppointment'
 import { GetAllAppointments } from '../../usecases/appointment/GetAllAppointments';
 import { GetAppointmentById } from '../../usecases/appointment/GetAppointmentById';
 import { UpdateAppointment } from '../../usecases/appointment/UpdateAppointment';
-import { buildWhatsAppMessageForBusiness, buildWhatsAppUrl } from '../../utils/utils';
+import {
+  buildWhatsAppMessageForApproval,
+  buildWhatsAppMessageForBusiness,
+  buildWhatsAppUrl,
+} from '../../utils/utils';
+import { addressRepository } from '../repositories/AddressRepository';
 import { AppointmentRepository } from '../repositories/AppointmentRepository';
 
 const appointmentRepository = new AppointmentRepository();
@@ -70,7 +75,6 @@ export const createAppointment = async (req: Request, res: Response) => {
       });
       whatsappUrl = buildWhatsAppUrl(numberBarber, msg);
     }
-    console.log(whatsappUrl);
     res.status(201).json({
       ...appointment,
       whatsappUrl,
@@ -110,12 +114,55 @@ export const approveAppointment = async (req: Request, res: Response) => {
       status: 'aprovado',
       statusAprovacao: 'aprovado',
     });
-    if (appointment) {
-      res.json(appointment);
-    } else {
-      res.status(404).json({ error: 'Appointment not found' });
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
     }
+
+    const fullAppointment = await Appointment.findById(id);
+    if (!fullAppointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    const user = await User.findById(fullAppointment.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const addresses = await addressRepository.findByIdUser(String(fullAppointment.userId));
+    let phone = '';
+
+    if (addresses && addresses.length > 0 && addresses[0]?.phoneNumber) {
+      phone = addresses[0].phoneNumber;
+    } else if (fullAppointment.userNumber) {
+      phone = fullAppointment.userNumber;
+    }
+
+    let whatsappUrl = null;
+
+    if (phone) {
+      const msg = buildWhatsAppMessageForApproval({
+        nomeUser: user.name,
+        userNumber: phone,
+        service: fullAppointment.service,
+        date: fullAppointment.date,
+        time: fullAppointment.time,
+        modality: fullAppointment.modality,
+        notes: fullAppointment.notes,
+        idServico: fullAppointment.idServico,
+        repete: fullAppointment.repete,
+        userId: fullAppointment.userId,
+        barberId: fullAppointment.barberId,
+        color: fullAppointment.color,
+      });
+      whatsappUrl = buildWhatsAppUrl(phone, msg);
+    }
+
+    res.json({
+      whatsappUrl,
+    });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Failed to approve appointment' });
   }
 };
@@ -232,18 +279,18 @@ export const getAllAppointmentsByBarberId = async (req: Request, res: Response) 
   try {
     const { barberId } = req.params;
     const { filter } = req.query;
-    const timezone = 'America/Sao_Paulo'; // Ajuste para o fuso horário correto
+    const timezone = 'America/Sao_Paulo';
 
     let query: any = { barberId };
 
     if (filter && filter !== 'all') {
       let startDate = moment.tz(timezone).startOf('day');
-      let endDate = moment.tz(timezone).set({ hour: 23, minute: 59, second: 59, millisecond: 999 });
+      let endDate = moment.tz(timezone).endOf('day');
 
       switch (filter) {
         case 'today':
           startDate = moment.tz(timezone).startOf('day');
-          endDate = moment.tz(timezone).set({ hour: 23, minute: 59, second: 59, millisecond: 999 });
+          endDate = moment.tz(timezone).endOf('day');
           break;
         case 'week':
           startDate = moment.tz(timezone).startOf('isoWeek');
@@ -259,16 +306,13 @@ export const getAllAppointmentsByBarberId = async (req: Request, res: Response) 
           break;
       }
 
-      // Ajuste para garantir que o final do dia UTC corresponda ao final do dia no timezone São Paulo
       const utcStartDate = startDate.toDate();
       const utcEndDate = endDate.toDate();
-
-      query.date = { $gte: utcStartDate, $lt: utcEndDate };
+      query.create = { $gte: utcStartDate, $lt: utcEndDate };
     }
 
     const appointments = await Appointment.find(query);
 
-    // Fetch user details for each appointment
     const formattedAppointments = await Promise.all(
       appointments.map(async (appointment: any) => {
         const user = await User.findById(appointment.userId, 'name email');
@@ -292,7 +336,6 @@ export const getAllAppointmentsByBarberId = async (req: Request, res: Response) 
         };
       }),
     );
-    console.log('formattedAppointments >>', formattedAppointments);
     res.json(formattedAppointments);
   } catch (error) {
     res.status(500).json({ error: 'Failed to get appointments by barber ID' });

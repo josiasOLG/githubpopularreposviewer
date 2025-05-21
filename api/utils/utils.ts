@@ -64,6 +64,34 @@ export function buildWhatsAppMessageForUser(data: AppointmentWhatsAppData): stri
   );
 }
 
+export function buildWhatsAppMessageForApproval(data: any): string {
+  const dateObj = new Date(data.date);
+
+  const formattedDate = dateObj.toLocaleDateString('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'America/Sao_Paulo',
+  });
+
+  return (
+    `Olá ${data.nomeUser}! Seu agendamento foi APROVADO!\n\n` +
+    `Detalhes do agendamento:\n` +
+    `Serviço(s): ${Array.isArray(data.service) ? data.service.join(', ') : data.service}\n` +
+    `Data: ${formattedDate} às ${data.time}\n` +
+    `Modalidade: ${data.modality}\n` +
+    `Observações: ${
+      data.notes ||
+      'Nenhuma observação adicional no momento. Caso tenha alguma dúvida ou necessidade especial, fique à vontade para entrar em contato.'
+    }\n\n` +
+    `Agradecemos pela preferência e aguardamos você!`
+  );
+}
+
+export const IsValidEmail = (email: string): boolean => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
 export function buildWhatsAppUrl(phone: string, message: string): string {
   let cleaned = phone.replace(/\D/g, '');
   if (cleaned.length === 11 && cleaned.startsWith('9')) {

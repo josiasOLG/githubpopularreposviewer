@@ -18,4 +18,6 @@ export interface Appointment {
   color?: string;
   userNumber?: string;
   modality?: string;
+  create?: Date;
+  update?: Date;
 }
