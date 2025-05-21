@@ -206,7 +206,6 @@ export const login = async (req: Request, res: Response) => {
       { expiresIn: '7d' },
     );
 
-    // Armazenar os tokens no banco de dados
     user.accessToken = accessToken;
     user.refreshToken = refreshToken;
     await userRepository.update(user._id, user);

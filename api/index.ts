@@ -9,6 +9,8 @@ import cors from 'cors';
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import swaggerFile from './config/swagger'; // Ajuste o caminho conforme necessário
+import { logService } from './utils/LogService';
+import './utils/errorHandler'; // Importe o manipulador de erros global
 
 import MongoStore from 'connect-mongo';
 import session from 'express-session';
@@ -30,6 +32,7 @@ import notificationRouter from './adapters/controllers/NotificationController';
 import userRouter from './adapters/controllers/UserController';
 import addressRouter from './adapters/routes/addressRoutes';
 import appServiceRoutes from './adapters/routes/appServiceRoutes';
+import logRoutes from './adapters/routes/logRoutes';
 import pdfRoutes from './adapters/routes/pdfRoutes';
 import qrCodeRoutes from './adapters/routes/qrCodeRoutes';
 import serviceRoutes from './adapters/routes/serviceRoutes';
@@ -47,6 +50,9 @@ const app = express();
 // Middlewares
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+
+// Middleware para registrar todas as requisições
+app.use(logService.requestLoggerMiddleware('api'));
 
 app.use(
   cors({
@@ -99,6 +105,25 @@ app.use('/addresses', authMiddleware, addressRouter);
 app.use('/subscription', subscriptionRoutes);
 app.use('/services', authMiddleware, serviceRoutes);
 app.use('/pdf', authMiddleware, pdfRoutes);
+app.use('/logs', authMiddleware, logRoutes);
+
+// Middleware global para capturar erros
+app.use(logService.errorMiddleware('api'));
+
+// Middleware para lidar com rotas não encontradas
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  res.status(404).json({ error: 'Endpoint não encontrado.' });
+});
+
+// Middleware global para tratar todos os erros
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Erro não tratado:', err);
+
+  // Já foi registrado pelo middleware de erro
+  res.status(500).json({
+    error: 'Ocorreu um erro interno no servidor. Nossa equipe foi notificada.',
+  });
+});
 
 const startApp = async () => {
   try {
