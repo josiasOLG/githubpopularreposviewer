@@ -1,5 +1,5 @@
-import { User } from "../../entities/User";
-import { User as UserModel } from "../../frameworks/orm/models/User";
+import { User } from '../../entities/User';
+import { User as UserModel } from '../../frameworks/orm/models/User';
 
 export class UserRepository {
   async create(userData: User): Promise<User> {
@@ -12,31 +12,21 @@ export class UserRepository {
     return user ? user.toObject() : null;
   }
 
-  async updateAgendaConfig(
-    userId: string,
-    agendaConfig: any
-  ): Promise<User | null> {
-    const user = await UserModel.findByIdAndUpdate(
-      userId,
-      { agendaConfig },
-      { new: true }
-    );
+  async updateAgendaConfig(userId: string, agendaConfig: any): Promise<User | null> {
+    const user = await UserModel.findByIdAndUpdate(userId, { agendaConfig }, { new: true });
     return user ? user.toObject() : null;
   }
 
   async getAgendaConfig(userId: string): Promise<any | null> {
-    const user = await UserModel.findById(userId).select("agendaConfig");
+    const user = await UserModel.findById(userId).select('agendaConfig');
     return user ? user.toObject().agendaConfig : null;
   }
 
-  async getAgendaConfigService(
-    userId: string,
-    service: string
-  ): Promise<any | null> {
+  async getAgendaConfigService(userId: string, service: string): Promise<any | null> {
     const user = await UserModel.findOne({
       _id: userId,
       role: service,
-    }).select("agendaConfig");
+    }).select('agendaConfig');
 
     return user ? user.toObject().agendaConfig : null;
   }
@@ -63,64 +53,54 @@ export class UserRepository {
   }
 
   async getBarbers(): Promise<User[]> {
-    const barbers = await UserModel.find({ role: "BARBER" });
-    return barbers.map((barber) => barber.toObject());
+    const barbers = await UserModel.find({ role: 'BARBER' });
+    return barbers.map(barber => barber.toObject());
   }
 
   async updateService(userId: any, service: string): Promise<User | null> {
-    const user = await UserModel.findByIdAndUpdate(
-      userId,
-      { service },
-      { new: true }
-    );
+    const user = await UserModel.findByIdAndUpdate(userId, { service }, { new: true });
     return user ? user.toObject() : null;
   }
 
-  async searchUsers(query: string, service: string): Promise<User[]> {
-    const regex = new RegExp(query, "i");
-    const users = await UserModel.aggregate([
+  async searchUsers(query: string | undefined, service: string): Promise<User[]> {
+    const pipeline: any[] = [
       {
         $match: {
-          role: service,
+          $or: [{ role: service }, { service: service }],
           active: true,
-          $or: [{ name: regex }, { code: regex }],
-          startTime: { $exists: true, $ne: null },
-          lunchStartTime: { $exists: true, $ne: null },
-          lunchEndTime: { $exists: true, $ne: null },
-          endTime: { $exists: true, $ne: null },
         },
       },
       {
         $lookup: {
-          from: "addresses", // Nome da coleção de endereços no MongoDB
-          localField: "_id",
-          foreignField: "idUser",
-          as: "address",
+          from: 'addresses',
+          localField: '_id',
+          foreignField: 'idUser',
+          as: 'address',
         },
       },
       {
-        $match: {
-          address: { $ne: [] }, // Filtra apenas usuários com endereço
+        $addFields: {
+          address: {
+            $cond: {
+              if: { $gt: [{ $size: '$address' }, 0] },
+              then: { $arrayElemAt: ['$address', 0] },
+              else: null,
+            },
+          },
         },
       },
-      {
-        $project: {
-          _id: 1,
-          name: 1,
-          email: 1,
-          code: 1,
-          role: 1,
-          startTime: 1,
-          agendaConfig: 1,
-          lunchStartTime: 1,
-          lunchEndTime: 1,
-          endTime: 1,
-          image: 1,
-          address: { $arrayElemAt: ["$address", 0] },
-        },
-      },
-    ]);
+    ];
 
+    if (query && query.trim() !== '') {
+      const regex = new RegExp(query.trim(), 'i');
+      pipeline.unshift({
+        $match: {
+          $or: [{ name: regex }, { code: regex }],
+        },
+      });
+    }
+
+    const users = await UserModel.aggregate(pipeline);
     return users;
   }
   async findByRefreshToken(refreshToken: string): Promise<User | null> {

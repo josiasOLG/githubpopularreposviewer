@@ -262,9 +262,9 @@ export const pesquisar = async (req: Request, res: Response) => {
     }
 
     const users = await userRepository.searchUsers(query as string | undefined, service);
-    console.log('users', users);
+
     if (!users || users.length === 0) {
-      return res.status(404).json({ error: 'Nenhum usuário encontrado' });
+      return res.status(400).json({ error: 'Nenhum usuário encontrado' });
     }
     const usersWithAgendaConfig = users.filter(
       (user: any) => user.agendaConfig && Object.keys(user.agendaConfig.workDays).length > 0,
