@@ -4,9 +4,6 @@ import { Types } from 'mongoose';
 import { Appointment } from '../../frameworks/orm/models/Appointment';
 import { User } from '../../frameworks/orm/models/User';
 import { CreateAppointment } from '../../usecases/appointment/CreateAppointment';
-import { DeleteAppointment } from '../../usecases/appointment/DeleteAppointment';
-import { GetAllAppointments } from '../../usecases/appointment/GetAllAppointments';
-import { GetAppointmentById } from '../../usecases/appointment/GetAppointmentById';
 import { UpdateAppointment } from '../../usecases/appointment/UpdateAppointment';
 import {
   buildWhatsAppMessageForApproval,
@@ -38,6 +35,14 @@ export const createAppointment = async (req: Request, res: Response) => {
       nomeUser,
     } = req.body;
 
+    // Verificar se o profissional está ativo
+    const barber = await User.findById(barberId);
+    if (!barber || barber.active !== true) {
+      return res.status(400).json({
+        error: 'O profissional selecionado não está disponível para agendamentos',
+      });
+    }
+
     const createAppointment = new CreateAppointment(appointmentRepository);
     const appointment = await createAppointment.execute({
       userId,
@@ -54,6 +59,7 @@ export const createAppointment = async (req: Request, res: Response) => {
       color,
       userNumber,
       modality,
+      active: true, // Garantir que novos agendamentos sejam criados como ativos
     });
 
     let whatsappUrl = null;
@@ -92,6 +98,7 @@ export const checkExistingAppointment = async (req: Request, res: Response) => {
       userId,
       date,
       idServico,
+      active: true, // Verificar apenas agendamentos ativos
     });
     if (existingAppointment) {
       res.status(400).json({
@@ -110,6 +117,13 @@ export const checkExistingAppointment = async (req: Request, res: Response) => {
 export const approveAppointment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
+    // Verificar se o agendamento está ativo antes de aprovar
+    const appointmentToApprove = await Appointment.findById(id);
+    if (!appointmentToApprove || appointmentToApprove.active !== true) {
+      return res.status(404).json({ error: 'Agendamento não encontrado ou inativo' });
+    }
+
     const appointment = await appointmentRepository.update(id, {
       status: 'aprovado',
       statusAprovacao: 'aprovado',
@@ -171,6 +185,13 @@ export const rejectAppointment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { cancelReason } = req.body;
+
+    // Verificar se o agendamento está ativo antes de rejeitar
+    const appointmentToReject = await Appointment.findById(id);
+    if (!appointmentToReject || appointmentToReject.active !== true) {
+      return res.status(404).json({ error: 'Agendamento não encontrado ou inativo' });
+    }
+
     const appointment = await appointmentRepository.update(id, {
       status: 'rejeitado',
       statusAprovacao: 'rejeitado',
@@ -188,48 +209,126 @@ export const rejectAppointment = async (req: Request, res: Response) => {
 
 export const getAllAppointments = async (req: Request, res: Response) => {
   try {
-    const getAllAppointments = new GetAllAppointments(appointmentRepository);
-    const appointments = await getAllAppointments.execute();
-    res.json(appointments);
+    // Modificar o método para buscar apenas agendamentos ativos
+    const appointments = await Appointment.find({ active: true });
+
+    const formattedAppointments = await Promise.all(
+      appointments.map(async (appointment: any) => {
+        const user = await User.findById(appointment.userId, 'name');
+        const barber = await User.findById(appointment.barberId, 'name');
+
+        return {
+          id: appointment._id,
+          userId: appointment.userId,
+          userName: user?.name || 'Unknown User',
+          barberId: appointment.barberId,
+          barberName: barber?.name || 'Unknown Barber',
+          date: appointment.date,
+          time: appointment.time,
+          status: appointment.status,
+          statusAprovacao: appointment.statusAprovacao,
+          service: appointment.service,
+          notes: appointment.notes,
+          repete: appointment.repete,
+          allDay: appointment.allDay,
+          color: appointment.color,
+          userNumber: appointment.userNumber,
+          modality: appointment.modality,
+        };
+      }),
+    );
+
+    res.json(formattedAppointments);
   } catch (error) {
+    console.error('Erro ao buscar todos os agendamentos:', error);
     res.status(500).json({ error: 'Failed to get appointments' });
   }
 };
 
 export const getAppointmentById = async (req: Request, res: Response) => {
   try {
-    const getAppointmentById = new GetAppointmentById(appointmentRepository);
-    const appointment = await getAppointmentById.execute(req.params.id);
-    if (appointment) {
-      res.json(appointment);
-    } else {
-      res.status(404).json({ error: 'Appointment not found' });
+    const { id } = req.params;
+
+    // Buscar apenas agendamentos ativos
+    const appointment = await Appointment.findOne({ _id: id, active: true });
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found or inactive' });
     }
+
+    // Buscar informações adicionais
+    const user = await User.findById(appointment.userId, 'name email');
+    const barber = await User.findById(appointment.barberId, 'name');
+
+    const formattedAppointment = {
+      id: appointment._id,
+      userId: appointment.userId,
+      userName: user?.name || 'Unknown User',
+      userEmail: user?.email,
+      barberId: appointment.barberId,
+      barberName: barber?.name || 'Unknown Barber',
+      date: appointment.date,
+      time: appointment.time,
+      status: appointment.status,
+      statusAprovacao: appointment.statusAprovacao,
+      statusMensage: appointment.statusMensage,
+      service: appointment.service,
+      notes: appointment.notes,
+      statusPoint: appointment.statusPoint,
+      repete: appointment.repete,
+      allDay: appointment.allDay,
+      exceptions: appointment.exceptions,
+      endRepeat: appointment.endRepeat,
+      color: appointment.color,
+      userNumber: appointment.userNumber,
+      modality: appointment.modality,
+    };
+
+    res.json(formattedAppointment);
   } catch (error) {
+    console.error('Erro ao buscar agendamento por ID:', error);
     res.status(500).json({ error: 'Failed to get appointment' });
   }
 };
 
 export const updateAppointment = async (req: Request, res: Response) => {
   try {
+    const { id } = req.params;
+
+    // Verificar se o agendamento está ativo antes de atualizar
+    const appointmentToUpdate = await Appointment.findById(id);
+    if (!appointmentToUpdate || appointmentToUpdate.active !== true) {
+      return res.status(404).json({ error: 'Agendamento não encontrado ou inativo' });
+    }
+
     const updateAppointment = new UpdateAppointment(appointmentRepository);
-    const appointment = await updateAppointment.execute(req.params.id, req.body);
+    const appointment = await updateAppointment.execute(id, req.body);
+
     if (appointment) {
       res.json(appointment);
     } else {
       res.status(404).json({ error: 'Appointment not found' });
     }
   } catch (error) {
+    console.error('Erro ao atualizar agendamento:', error);
     res.status(500).json({ error: 'Failed to update appointment' });
   }
 };
 
 export const deleteAppointment = async (req: Request, res: Response) => {
   try {
-    const deleteAppointment = new DeleteAppointment(appointmentRepository);
-    await deleteAppointment.execute(req.params.id);
-    res.sendStatus(204);
+    const { id } = req.params;
+
+    // Em vez de excluir fisicamente, atualizar para active = false
+    const appointment = await Appointment.findByIdAndUpdate(id, { active: false }, { new: true });
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    res.status(200).json({ message: 'Appointment deactivated successfully' });
   } catch (error) {
+    console.error('Erro ao desativar agendamento:', error);
     res.status(500).json({ error: 'Failed to delete appointment' });
   }
 };
@@ -238,12 +337,19 @@ export const getAllAppointmentsByUserId = async (req: Request, res: Response) =>
   try {
     const { userId } = req.params;
     const { idServico } = req.query;
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    const appointments = await Appointment.find({
+
+    // Construir a query base para agendamentos ativos
+    const query: any = {
       userId,
-      idServico,
-    });
+      active: true,
+    };
+
+    // Adicionar filtro por serviço se fornecido
+    if (idServico) {
+      query.idServico = idServico;
+    }
+
+    const appointments = await Appointment.find(query);
 
     const formattedAppointments = await Promise.all(
       appointments.map(async (appointment: any) => {
@@ -271,6 +377,7 @@ export const getAllAppointmentsByUserId = async (req: Request, res: Response) =>
     );
     res.json(formattedAppointments);
   } catch (error) {
+    console.error('Erro ao buscar agendamentos por ID de usuário:', error);
     res.status(500).json({ error: 'Failed to get appointments by user ID' });
   }
 };
@@ -281,7 +388,10 @@ export const getAllAppointmentsByBarberId = async (req: Request, res: Response) 
     const { filter } = req.query;
     const timezone = 'America/Sao_Paulo';
 
-    let query: any = { barberId };
+    let query: any = {
+      barberId,
+      active: true, // Garantir que apenas agendamentos ativos sejam retornados
+    };
 
     if (filter && filter !== 'all') {
       let startDate = moment.tz(timezone).startOf('day');
@@ -311,33 +421,61 @@ export const getAllAppointmentsByBarberId = async (req: Request, res: Response) 
       query.create = { $gte: utcStartDate, $lt: utcEndDate };
     }
 
+    // Buscar os agendamentos ativos do profissional
     const appointments = await Appointment.find(query);
 
-    const formattedAppointments = await Promise.all(
-      appointments.map(async (appointment: any) => {
-        const user = await User.findById(appointment.userId, 'name email');
-        return {
-          id: appointment._id,
-          userId: user?.id,
-          userName: user?.name || 'Unknown User',
-          date: appointment.date,
-          time: appointment.time,
-          status: appointment.status,
-          statusAprovacao: appointment.statusAprovacao,
-          statusMensage: appointment.statusMensage,
-          service: appointment.service,
-          notes: appointment.notes,
-          statusPoint: appointment.statusPoint,
-          repete: appointment.repete,
-          allDay: appointment.allDay,
-          exceptions: appointment.exceptions,
-          endRepeat: appointment.endRepeat,
-          color: appointment.color,
-        };
-      }),
-    );
+    // Extrair todos os userIds para fazer uma única consulta ao banco
+    const userIds = appointments.map(appointment => appointment.userId);
+
+    // Buscar apenas usuários ativos
+    const users = await User.find(
+      {
+        _id: { $in: userIds },
+        active: true, // Garantir que apenas usuários ativos sejam retornados
+      },
+      'name email phone image birthDate descricao points',
+    ).lean();
+
+    const userMap = new Map();
+    users.forEach(user => {
+      userMap.set(user._id.toString(), user);
+    });
+
+    const formattedAppointments = appointments.map((appointment: any) => {
+      const user = userMap.get(appointment.userId.toString()) || {};
+
+      return {
+        id: appointment._id,
+        userId: appointment.userId,
+        userName: user.name || 'Unknown User',
+        userEmail: user.email,
+        userPhone: user.phone,
+        userImage: user.image,
+        userBirthDate: user.birthDate,
+        userDescription: user.descricao,
+        userPoints:
+          user.points?.find((p: any) => p.barberId.toString() === barberId.toString())?.qtd || 0,
+        date: appointment.date,
+        time: appointment.time,
+        status: appointment.status,
+        statusAprovacao: appointment.statusAprovacao,
+        statusMensage: appointment.statusMensage,
+        service: appointment.service,
+        notes: appointment.notes,
+        statusPoint: appointment.statusPoint,
+        repete: appointment.repete,
+        allDay: appointment.allDay,
+        exceptions: appointment.exceptions,
+        endRepeat: appointment.endRepeat,
+        color: appointment.color,
+        userNumber: appointment.userNumber,
+        modality: appointment.modality,
+      };
+    });
+
     res.json(formattedAppointments);
   } catch (error) {
+    console.error('Erro ao buscar agendamentos por ID do profissional:', error);
     res.status(500).json({ error: 'Failed to get appointments by barber ID' });
   }
 };
@@ -345,6 +483,13 @@ export const getAllAppointmentsByBarberId = async (req: Request, res: Response) 
 export const addPoints = async (req: Request, res: Response) => {
   try {
     const { appointmentId, userId, barberId, barberName } = req.body;
+
+    // Verificar se o agendamento está ativo
+    const appointmentToUpdate = await Appointment.findById(appointmentId);
+    if (!appointmentToUpdate || appointmentToUpdate.active !== true) {
+      return res.status(404).json({ error: 'Agendamento não encontrado ou inativo' });
+    }
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -390,7 +535,7 @@ export const addPoints = async (req: Request, res: Response) => {
       user,
     });
   } catch (error) {
-    console.error(error);
+    console.error('Erro ao adicionar pontos:', error);
     res.status(500).json({ error: 'Failed to add points' });
   }
 };
@@ -410,8 +555,43 @@ export const getPoints = async (req: Request, res: Response) => {
       points: user.points,
     });
   } catch (error) {
-    console.error(error);
+    console.error('Erro ao recuperar pontos:', error);
     res.status(500).json({ error: 'Failed to retrieve points' });
+  }
+};
+
+export const cancelAppointment = async (req: Request, res: Response) => {
+  try {
+    const { appointmentId } = req.body;
+
+    if (!appointmentId) {
+      return res.status(400).json({ error: 'ID do agendamento é obrigatório' });
+    }
+    const appointment = await Appointment.findById(appointmentId);
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Agendamento não encontrado' });
+    }
+
+    if (appointment.active === false) {
+      return res.status(400).json({ error: 'Este agendamento já está cancelado' });
+    }
+
+    appointment.active = false;
+    appointment.status = 'cancelado';
+    appointment.statusAprovacao = 'cancelado';
+
+    if (req.body.cancelReason) {
+      appointment.statusMensage = req.body.cancelReason;
+    }
+    await appointment.save();
+    res.status(200).json({
+      message: 'Agendamento cancelado com sucesso',
+      appointmentId: appointment._id,
+    });
+  } catch (error) {
+    console.error('Erro ao cancelar agendamento:', error);
+    res.status(500).json({ error: 'Falha ao cancelar o agendamento' });
   }
 };
 
@@ -424,10 +604,11 @@ export const createException = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Exception date is required' });
     }
 
-    const appointment = await Appointment.findById(id);
+    // Verificar se o agendamento está ativo
+    const appointment = await Appointment.findOne({ _id: id, active: true });
 
     if (!appointment) {
-      return res.status(404).json({ error: 'Appointment not found' });
+      return res.status(404).json({ error: 'Appointment not found or inactive' });
     }
 
     if (!appointment.exceptions) {
@@ -442,7 +623,7 @@ export const createException = async (req: Request, res: Response) => {
       appointment,
     });
   } catch (error) {
-    console.error(error);
+    console.error('Erro ao criar exceção:', error);
     res.status(500).json({ error: 'Failed to add exception' });
   }
 };
@@ -454,6 +635,12 @@ export const updateEndRepeat = async (req: Request, res: Response) => {
 
     if (!endRepeat) {
       return res.status(400).json({ error: 'End repeat date is required' });
+    }
+
+    // Verificar se o agendamento está ativo
+    const appointmentExists = await Appointment.findOne({ _id: id, active: true });
+    if (!appointmentExists) {
+      return res.status(404).json({ error: 'Appointment not found or inactive' });
     }
 
     const appointment = await Appointment.findByIdAndUpdate(
@@ -471,7 +658,7 @@ export const updateEndRepeat = async (req: Request, res: Response) => {
       appointment,
     });
   } catch (error) {
-    console.error(error);
+    console.error('Erro ao atualizar data de fim da repetição:', error);
     res.status(500).json({ error: 'Failed to update end repeat date' });
   }
 };
@@ -490,5 +677,6 @@ router.put('/:id/reject', rejectAppointment);
 router.post('/add-points', addPoints);
 router.post('/:id/exception', createException);
 router.put('/:id/end-repeat', updateEndRepeat);
+router.post('/cancel', cancelAppointment);
 
 export default router;

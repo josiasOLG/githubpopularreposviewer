@@ -21,6 +21,7 @@ export interface IAppointment extends Document {
   modality?: string;
   create?: Date;
   update?: Date;
+  active?: boolean;
 }
 
 const appointmentSchema = new Schema({
@@ -44,6 +45,7 @@ const appointmentSchema = new Schema({
   modality: { type: String },
   create: { type: Date, default: Date.now },
   update: { type: Date, default: Date.now },
+  active: { type: Boolean, default: true },
 });
 
 export const Appointment = model<IAppointment>('Appointment', appointmentSchema);

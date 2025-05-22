@@ -20,4 +20,5 @@ export interface Appointment {
   modality?: string;
   create?: Date;
   update?: Date;
+  active?: boolean;
 }
