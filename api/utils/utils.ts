@@ -56,7 +56,7 @@ export function buildWhatsAppMessageForBusiness(data: AppointmentWhatsAppData): 
 
   return (
     `🎉 *NOVO AGENDAMENTO!* 🎉\n\n` +
-    `Olá! Você recebeu um novo agendamento através do seu sistema de barbearia.\n\n` +
+    `Olá! Você recebeu um novo agendamento através do seu sistema. Acesso o app Stilovox e vá em agendamentos para realizar a provação ou rejeição do agendamento\n\n` +
     `👤 *Cliente*: ${data.nomeUser}\n` +
     `📱 *Contato*: ${data.userNumber}\n\n` +
     `🛠️ *Serviço(s)*: ${serviceDisplay}\n` +
