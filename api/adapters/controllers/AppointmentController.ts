@@ -663,11 +663,109 @@ export const updateEndRepeat = async (req: Request, res: Response) => {
   }
 };
 
+export const getAllAppointmentsByBarberCalendario = async (req: Request, res: Response) => {
+  try {
+    const { barberId } = req.params;
+    const { filter } = req.query;
+    const timezone = 'America/Sao_Paulo';
+
+    let query: any = {
+      barberId,
+      active: true,
+      status: { $ne: 'rejeitado' },
+      statusAprovacao: { $ne: 'rejeitado' },
+    };
+
+    if (filter && filter !== 'all') {
+      let startDate = moment.tz(timezone).startOf('day');
+      let endDate = moment.tz(timezone).endOf('day');
+
+      switch (filter) {
+        case 'today':
+          startDate = moment.tz(timezone).startOf('day');
+          endDate = moment.tz(timezone).endOf('day');
+          break;
+        case 'week':
+          startDate = moment.tz(timezone).startOf('isoWeek');
+          endDate = moment.tz(timezone).endOf('isoWeek');
+          break;
+        case 'month':
+          startDate = moment.tz(timezone).startOf('month');
+          endDate = moment.tz(timezone).endOf('month');
+          break;
+        default:
+          startDate = moment.tz(timezone).startOf('day');
+          endDate = moment.tz(timezone).endOf('day');
+          break;
+      }
+
+      const utcStartDate = startDate.toDate();
+      const utcEndDate = endDate.toDate();
+      query.create = { $gte: utcStartDate, $lt: utcEndDate };
+    }
+
+    const appointments = await Appointment.find(query);
+
+    const userIds = appointments.map(appointment => appointment.userId);
+
+    const users = await User.find(
+      {
+        _id: { $in: userIds },
+        active: true,
+      },
+      'name email phone image birthDate descricao points',
+    ).lean();
+
+    const userMap = new Map();
+    users.forEach(user => {
+      userMap.set(user._id.toString(), user);
+    });
+
+    const formattedAppointments = appointments.map((appointment: any) => {
+      const user = userMap.get(appointment.userId.toString()) || {};
+
+      return {
+        id: appointment._id,
+        userId: appointment.userId,
+        userName: user.name || 'Unknown User',
+        userEmail: user.email,
+        userPhone: user.phone,
+        userImage: user.image,
+        userBirthDate: user.birthDate,
+        userDescription: user.descricao,
+        userPoints:
+          user.points?.find((p: any) => p.barberId.toString() === barberId.toString())?.qtd || 0,
+        date: appointment.date,
+        time: appointment.time,
+        status: appointment.status,
+        statusAprovacao: appointment.statusAprovacao,
+        statusMensage: appointment.statusMensage,
+        service: appointment.service,
+        notes: appointment.notes,
+        statusPoint: appointment.statusPoint,
+        repete: appointment.repete,
+        allDay: appointment.allDay,
+        exceptions: appointment.exceptions,
+        endRepeat: appointment.endRepeat,
+        color: appointment.color,
+        userNumber: appointment.userNumber,
+        modality: appointment.modality,
+      };
+    });
+
+    res.json(formattedAppointments);
+  } catch (error) {
+    console.error('Erro ao buscar agendamentos para o calendário:', error);
+    res.status(500).json({ error: 'Falha ao buscar agendamentos para o calendário' });
+  }
+};
+
 router.post('/', createAppointment);
 router.post('/check-appointment', checkExistingAppointment);
 router.get('/', getAllAppointments);
 router.get('/user/:userId', getAllAppointmentsByUserId);
 router.get('/barber/:barberId', getAllAppointmentsByBarberId);
+router.get('/barber/calendario/:barberId', getAllAppointmentsByBarberCalendario);
 router.get('/:id', getAppointmentById);
 router.get('/points/:id', getPoints);
 router.put('/:id', updateAppointment);
