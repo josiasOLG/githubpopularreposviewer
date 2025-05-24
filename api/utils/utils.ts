@@ -249,3 +249,46 @@ export const generateAvailableTimeSlots = async (
 
   return availableSlots;
 };
+
+/**
+ * Validates a Brazilian CEP (postal code)
+ * @param cep CEP to validate (can include hyphen)
+ * @returns Boolean indicating if CEP is valid
+ */
+export const isValidCep = (cep: string): boolean => {
+  // CEP must be in format: 12345-678 or 12345678
+  const cepRegex = /^\d{5}-?\d{3}$/;
+  return cepRegex.test(cep);
+};
+
+/**
+ * Formats a CEP by removing non-numeric characters and ensuring it has 8 digits
+ * @param cep CEP to format
+ * @returns Formatted CEP or null if invalid
+ */
+export const formatCep = (cep: string): string | null => {
+  const cleanCep = cep.replace(/\D/g, '');
+
+  if (cleanCep.length !== 8) {
+    return null;
+  }
+
+  return cleanCep;
+};
+
+/**
+ * Formats a ViaCEP API response to match our internal address format
+ * @param viaCepResponse Response from ViaCEP API
+ * @returns Formatted address object
+ */
+export const formatViaCepResponse = (viaCepResponse: any): any => {
+  return {
+    street: viaCepResponse.logradouro,
+    complement: viaCepResponse.complemento,
+    locality: viaCepResponse.bairro,
+    city: viaCepResponse.localidade,
+    state: viaCepResponse.uf,
+    zipCode: viaCepResponse.cep,
+    country: 'Brasil',
+  };
+};
