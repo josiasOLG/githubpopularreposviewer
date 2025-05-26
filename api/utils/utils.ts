@@ -35,6 +35,57 @@ export function encrypt(text: string): string {
   return encrypted;
 }
 
+// Translation functions for English to Portuguese
+function translateModality(modality: string): string {
+  const modalityTranslations: Record<string, string> = {
+    Home: 'Domicílio',
+    home: 'Domicílio',
+    HOME: 'Domicílio',
+    Shop: 'Presencial',
+    shop: 'Presencial',
+    SHOP: 'Presencial',
+    Presencial: 'Presencial',
+    presencial: 'Presencial',
+    PRESENCIAL: 'Presencial',
+    Online: 'Online',
+    online: 'Online',
+    ONLINE: 'Online',
+    Virtual: 'Virtual',
+    virtual: 'Virtual',
+    VIRTUAL: 'Virtual',
+  };
+
+  return modalityTranslations[modality] || modality;
+}
+
+function translateRepete(repete: string): string {
+  const repeteTranslations: Record<string, string> = {
+    Daily: 'Diário',
+    daily: 'Diário',
+    DAILY: 'Diário',
+    Weekly: 'Semanal',
+    weekly: 'Semanal',
+    WEEKLY: 'Semanal',
+    Monthly: 'Mensal',
+    monthly: 'Mensal',
+    MONTHLY: 'Mensal',
+    Yearly: 'Anual',
+    yearly: 'Anual',
+    YEARLY: 'Anual',
+    None: 'Não',
+    none: 'Não',
+    NONE: 'Não',
+    No: 'Não',
+    no: 'Não',
+    NO: 'Não',
+    Never: 'Nunca',
+    never: 'Nunca',
+    NEVER: 'Nunca',
+  };
+
+  return repeteTranslations[repete] || repete;
+}
+
 export function buildWhatsAppMessageForBusiness(data: AppointmentWhatsAppData): string {
   // Format the date nicely
   const dateObj = new Date(data.date);
@@ -48,10 +99,14 @@ export function buildWhatsAppMessageForBusiness(data: AppointmentWhatsAppData): 
   // Format service display
   const serviceDisplay = Array.isArray(data.service) ? data.service.join(', ') : data.service;
 
+  // Translate modality from English to Portuguese
+  const translatedModality = translateModality(data.modality);
+
   // Create the recurrence text if applicable
   let recurrenceText = '';
   if (data.repete && data.repete !== 'Não' && data.repete !== 'não') {
-    recurrenceText = `\n\n📅 *Recorrência*: ${data.repete}`;
+    const translatedRepete = translateRepete(data.repete);
+    recurrenceText = `\n\n📅 *Recorrência*: ${translatedRepete}`;
   }
 
   return (
@@ -62,7 +117,7 @@ export function buildWhatsAppMessageForBusiness(data: AppointmentWhatsAppData): 
     `🛠️ *Serviço(s)*: ${serviceDisplay}\n` +
     `📆 *Data*: ${formattedDate}\n` +
     `⏰ *Horário*: ${data.time}\n` +
-    `🏠 *Modalidade*: ${data.modality}${recurrenceText}\n\n` +
+    `🏠 *Modalidade*: ${translatedModality}${recurrenceText}\n\n` +
     `📝 *Observações do cliente*:\n${data.notes || 'Nenhuma observação adicional.'}\n\n` +
     `Por favor, confirme este agendamento com o cliente o mais breve possível.` +
     `\n\nAtenciosamente,\nSistema de Agendamentos da stilovox`
@@ -70,18 +125,21 @@ export function buildWhatsAppMessageForBusiness(data: AppointmentWhatsAppData): 
 }
 
 export function buildWhatsAppMessageForUser(data: AppointmentWhatsAppData): string {
+  const translatedModality = translateModality(data.modality);
+
   return (
     `Seu agendamento foi realizado com sucesso!\n` +
     `Serviço(s): ${Array.isArray(data.service) ? data.service.join(', ') : data.service}\n` +
     `Data: ${data.date}\n` +
     `Hora: ${data.time}\n` +
-    `Modalidade: ${data.modality}\n` +
+    `Modalidade: ${translatedModality}\n` +
     `Observações: ${data.notes || 'Nenhuma'}\n`
   );
 }
 
 export function buildWhatsAppMessageForApproval(data: any): string {
   const dateObj = new Date(data.date);
+  const translatedModality = translateModality(data.modality);
 
   const formattedDate = dateObj.toLocaleDateString('pt-BR', {
     day: 'numeric',
@@ -95,7 +153,7 @@ export function buildWhatsAppMessageForApproval(data: any): string {
     `Detalhes do agendamento:\n` +
     `Serviço(s): ${Array.isArray(data.service) ? data.service.join(', ') : data.service}\n` +
     `Data: ${formattedDate} às ${data.time}\n` +
-    `Modalidade: ${data.modality}\n` +
+    `Modalidade: ${translatedModality}\n` +
     `Observações: ${
       data.notes ||
       'Nenhuma observação adicional no momento. Caso tenha alguma dúvida ou necessidade especial, fique à vontade para entrar em contato.'
