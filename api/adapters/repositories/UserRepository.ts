@@ -62,7 +62,12 @@ export class UserRepository {
     return user ? user.toObject() : null;
   }
 
-  async searchUsers(query: string | undefined, service: string): Promise<User[]> {
+  async searchUsers(
+    query: string | undefined,
+    service: string,
+    userState?: string,
+    userCity?: string,
+  ): Promise<User[]> {
     const pipeline: any[] = [
       {
         $match: {
@@ -91,9 +96,18 @@ export class UserRepository {
       },
     ];
 
+    if (userState && userCity) {
+      pipeline.push({
+        $match: {
+          'address.state': userState,
+          'address.city': userCity,
+        },
+      });
+    }
+
     if (query && query.trim() !== '') {
       const regex = new RegExp(query.trim(), 'i');
-      pipeline.unshift({
+      pipeline.push({
         $match: {
           $or: [{ name: regex }, { code: regex }],
         },
@@ -103,6 +117,7 @@ export class UserRepository {
     const users = await UserModel.aggregate(pipeline);
     return users;
   }
+
   async findByRefreshToken(refreshToken: string): Promise<User | null> {
     const user = await UserModel.findOne({ refreshToken });
     return user ? user.toObject() : null;

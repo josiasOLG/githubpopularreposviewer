@@ -296,9 +296,24 @@ export const pesquisar = async (req: Request, res: Response) => {
   try {
     const { query } = req.query;
     const { service } = req.params;
+    const userId = req.headers['x-user-id'] as string;
 
     if (!service) {
       return res.status(400).json({ error: 'Parâmetros de consulta e serviço são necessários' });
+    }
+
+    if (!userId) {
+      return res.status(400).json({ error: 'x-user-id header é obrigatório' });
+    }
+
+    const addresses = await addressRepository.findByIdUser(userId);
+    const userAddress = addresses.length > 0 ? addresses[0] : null;
+
+    if (!userAddress || !userAddress.state || !userAddress.locality) {
+      return res.status(400).json({
+        error: 'Endereço do usuário incompleto',
+        message: 'Estado e bairro são necessários para a pesquisa',
+      });
     }
 
     const appService = await appServiceRepository.findById(service);
@@ -307,11 +322,17 @@ export const pesquisar = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Serviço não encontrado ou não possui um nome' });
     }
 
-    const users = await userRepository.searchUsers(query as string | undefined, service);
+    const users = await userRepository.searchUsers(
+      query as string | undefined,
+      service,
+      userAddress.state,
+      userAddress.city,
+    );
 
     if (!users || users.length === 0) {
-      return res.status(400).json({ error: 'Nenhum usuário encontrado' });
+      return res.status(400).json({ error: 'Nenhum profissional encontrado' });
     }
+
     const usersWithAgendaConfig = users.filter(
       (user: any) => user.agendaConfig && Object.keys(user.agendaConfig.workDays).length > 0,
     );
@@ -354,8 +375,8 @@ export const pesquisar = async (req: Request, res: Response) => {
       users: userNames,
     });
   } catch (error) {
-    console.error('Falha ao pesquisar usuários:', error);
-    res.status(500).json({ error: 'Falha ao pesquisar usuários' });
+    console.error('Falha ao pesquisar profissionais:', error);
+    res.status(500).json({ error: 'Falha ao pesquisar profissionais' });
   }
 };
 
