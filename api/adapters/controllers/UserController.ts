@@ -294,7 +294,7 @@ export const updateService = async (req: Request, res: Response) => {
 
 export const pesquisar = async (req: Request, res: Response) => {
   try {
-    const { query } = req.query;
+    const { query, online, presencial, domicilio } = req.query;
     const { service } = req.params;
     const userId = req.headers['x-user-id'] as string;
 
@@ -309,11 +309,18 @@ export const pesquisar = async (req: Request, res: Response) => {
     const addresses = await addressRepository.findByIdUser(userId);
     const userAddress = addresses.length > 0 ? addresses[0] : null;
 
-    if (!userAddress || !userAddress.state || !userAddress.locality) {
-      return res.status(400).json({
-        error: 'Endereço do usuário incompleto',
-        message: 'Estado e bairro são necessários para a pesquisa',
-      });
+    const modalidades: string[] = [];
+    if (online === 'true') modalidades.push('online');
+    if (presencial === 'true') modalidades.push('presencial');
+    if (domicilio === 'true') modalidades.push('domicilio');
+
+    if (presencial === 'true') {
+      if (!userAddress || !userAddress.state || !userAddress.city) {
+        return res.status(400).json({
+          error: 'Endereço do usuário incompleto',
+          message: 'Estado e cidade são necessários para busca presencial',
+        });
+      }
     }
 
     const appService = await appServiceRepository.findById(service);
@@ -325,8 +332,9 @@ export const pesquisar = async (req: Request, res: Response) => {
     const users = await userRepository.searchUsers(
       query as string | undefined,
       service,
-      userAddress.state,
-      userAddress.city,
+      modalidades,
+      userAddress?.state,
+      userAddress?.city,
     );
 
     if (!users || users.length === 0) {

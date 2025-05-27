@@ -65,6 +65,7 @@ export class UserRepository {
   async searchUsers(
     query: string | undefined,
     service: string,
+    modalities?: string[],
     userState?: string,
     userCity?: string,
   ): Promise<User[]> {
@@ -96,7 +97,28 @@ export class UserRepository {
       },
     ];
 
-    if (userState && userCity) {
+    // Filtro por modalidades no agendaConfig
+    if (modalities && modalities.length > 0) {
+      // Converter modalidades para o formato correto do banco
+      const modalityMappings: { [key: string]: string } = {
+        online: 'Online',
+        presencial: 'Presencial',
+        domicilio: 'Domicílio',
+      };
+
+      const dbModalities = modalities.map(
+        modality => modalityMappings[modality.toLowerCase()] || modality,
+      );
+
+      pipeline.push({
+        $match: {
+          'agendaConfig.modalities': { $in: dbModalities },
+        },
+      });
+    }
+
+    // Se modalidade presencial estiver incluída, filtrar por localização
+    if (modalities && modalities.includes('presencial') && userState && userCity) {
       pipeline.push({
         $match: {
           'address.state': userState,
@@ -105,6 +127,7 @@ export class UserRepository {
       });
     }
 
+    // Filtro por nome ou código (se query fornecida)
     if (query && query.trim() !== '') {
       const regex = new RegExp(query.trim(), 'i');
       pipeline.push({
