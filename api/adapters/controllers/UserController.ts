@@ -1,15 +1,20 @@
 import { Request, Response, Router } from 'express';
 import { CreateUser } from '../../usecases/user/CreateUser';
 import { DeleteUser } from '../../usecases/user/DeleteUser';
+import { GetAllUsers } from '../../usecases/user/GetAllUsers';
 import { GetUserById } from '../../usecases/user/GetUserById';
+import { GetUserByIdAdmin } from '../../usecases/user/GetUserByIdAdmin';
 import { UpdateUser } from '../../usecases/user/UpdateUser';
 import { generateAvailableTimeSlots } from '../../utils/utils';
 import { AddressRepository } from '../repositories/AddressRepository';
-import { appServiceRepository } from '../repositories/AppServiceRepository';
+import { AppServiceRepository } from '../repositories/AppServiceRepository';
+import { BarberServiceRepository } from '../repositories/BarberServiceRepository';
 import { UserRepository } from '../repositories/UserRepository';
 
 const userRepository = new UserRepository();
 const addressRepository = new AddressRepository();
+const barberServiceRepository = new BarberServiceRepository();
+const appServiceRepository = new AppServiceRepository();
 
 const router = Router();
 
@@ -111,6 +116,56 @@ export const getUserById = async (req: Request, res: Response) => {
 
     if (user) {
       // Buscar o endereço do usuário
+      const addresses = await addressRepository.findByIdUser(userId);
+      const address = addresses.length > 0 ? addresses[0] : null;
+
+      const filteredUser = {
+        id: user._id,
+        active: user.active,
+        code: user.code,
+        email: user.email,
+        username: user.name,
+        points: user.points,
+        type: user.role,
+        service: user.service,
+        image: user.image,
+        certificacoes: user.certificacoes,
+        descricao: user.descricao,
+        endTime: user.endTime,
+        startTime: user.startTime,
+        lunchEndTime: user.lunchEndTime,
+        lunchStartTime: user.lunchStartTime,
+        address: address
+          ? {
+              street: address.street,
+              number: address.number,
+              complement: address.complement,
+              zipCode: address.zipCode,
+              city: address.city,
+              state: address.state,
+              country: address.country,
+              cpf: address.cpf,
+              phoneNumber: address.phoneNumber,
+              locality: address.locality,
+            }
+          : null,
+      };
+      res.json(filteredUser);
+    } else {
+      res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Falha ao obter usuário' });
+  }
+};
+
+export const getUserByIDParam = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id as string;
+    const getUserById = new GetUserById(userRepository);
+    const user = await getUserById.execute(userId);
+
+    if (user) {
       const addresses = await addressRepository.findByIdUser(userId);
       const address = addresses.length > 0 ? addresses[0] : null;
 
@@ -424,8 +479,41 @@ export const getActive = async (req: Request, res: Response) => {
   }
 };
 
+export const getAllUsersOptimized = async (req: Request, res: Response) => {
+  try {
+    const getAllUsers = new GetAllUsers(userRepository, appServiceRepository);
+    const usersWithDetails = await getAllUsers.executeWithDetails();
+
+    res.json(usersWithDetails);
+  } catch (error) {
+    console.error('Erro em getAllUsersOptimized:', error);
+    res.status(500).json({ error: 'Falha ao obter usuários' });
+  }
+};
+
+export const getUserByIdAdmin = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id as string;
+    const getUserByIdAdmin = new GetUserByIdAdmin(userRepository, appServiceRepository);
+    const userWithDetails = await getUserByIdAdmin.execute(userId);
+
+    if (!userWithDetails) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    res.json(userWithDetails);
+  } catch (error) {
+    console.error('Erro em getUserByIdAdmin:', error);
+    res.status(500).json({ error: 'Falha ao obter usuário com detalhes' });
+  }
+};
+
 router.post('/', createUser);
+router.get('/', getAllUsersOptimized);
+router.get('/optimized', getAllUsersOptimized); // Rota para a versão otimizada
+router.get('/admin/:id', getUserByIdAdmin); // Nova rota para admin obter usuário com detalhes completos
 router.get('/:id', getUserById);
+router.get('/param/:id', getUserByIDParam);
 router.get('/verifyUserById/:id', verifyUserById);
 router.get('/:id/hours', getBarberHoursById); // Nova rota para obter horários de barbeiros
 router.get('/pesquisar/:service', pesquisar);

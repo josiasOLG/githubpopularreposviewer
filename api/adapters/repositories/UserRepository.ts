@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { User } from '../../entities/User';
 import { User as UserModel } from '../../frameworks/orm/models/User';
 
@@ -55,6 +56,95 @@ export class UserRepository {
   async getBarbers(): Promise<User[]> {
     const barbers = await UserModel.find({ role: 'BARBER' });
     return barbers.map(barber => barber.toObject());
+  }
+
+  async getAll(): Promise<User[]> {
+    const users = await UserModel.find();
+    return users.map(user => user.toObject());
+  }
+
+  async getAllWithDetails(): Promise<any[]> {
+    try {
+      const pipeline = [
+        {
+          $lookup: {
+            from: 'addresses',
+            localField: '_id',
+            foreignField: 'idUser',
+            as: 'addresses',
+          },
+        },
+        {
+          $lookup: {
+            from: 'barberservices',
+            localField: '_id',
+            foreignField: 'userId',
+            as: 'barberServices',
+          },
+        },
+        {
+          $addFields: {
+            formattedAddresses: {
+              $map: {
+                input: '$addresses',
+                as: 'address',
+                in: {
+                  id: '$$address._id',
+                  street: '$$address.street',
+                  number: '$$address.number',
+                  complement: '$$address.complement',
+                  zipCode: '$$address.zipCode',
+                  city: '$$address.city',
+                  state: '$$address.state',
+                  country: '$$address.country',
+                  cpf: '$$address.cpf',
+                  phoneNumber: '$$address.phoneNumber',
+                  locality: '$$address.locality',
+                },
+              },
+            },
+            formattedBarberServices: {
+              $map: {
+                input: '$barberServices',
+                as: 'service',
+                in: {
+                  id: '$$service._id',
+                  name: '$$service.name',
+                  points: '$$service.points',
+                  maney: '$$service.maney',
+                },
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            id: '$_id',
+            name: 1,
+            email: 1,
+            image: 1,
+            service: 1,
+            certificacoes: 1,
+            descricao: 1,
+            active: 1,
+            points: 1,
+            role: 1,
+            code: 1,
+            startTime: 1,
+            endTime: 1,
+            lunchStartTime: 1,
+            lunchEndTime: 1,
+            addresses: '$formattedAddresses',
+            barberServices: '$formattedBarberServices',
+          },
+        },
+      ];
+
+      const users = await UserModel.aggregate(pipeline);
+      return users;
+    } catch (error: any) {
+      throw new Error(`Error getting all users with details: ${error.message}`);
+    }
   }
 
   async updateService(userId: any, service: string): Promise<User | null> {
@@ -149,5 +239,92 @@ export class UserRepository {
   async findByAccessToken(accessToken: string): Promise<User | null> {
     const user = await UserModel.findOne({ accessToken });
     return user ? user.toObject() : null;
+  }
+
+  async getByIdWithDetails(userId: string): Promise<any | null> {
+    try {
+      const pipeline = [
+        {
+          $match: { _id: new Types.ObjectId(userId) },
+        },
+        {
+          $lookup: {
+            from: 'addresses',
+            localField: '_id',
+            foreignField: 'idUser',
+            as: 'addresses',
+          },
+        },
+        {
+          $lookup: {
+            from: 'barberservices',
+            localField: '_id',
+            foreignField: 'userId',
+            as: 'barberServices',
+          },
+        },
+        {
+          $addFields: {
+            formattedAddresses: {
+              $map: {
+                input: '$addresses',
+                as: 'address',
+                in: {
+                  id: '$$address._id',
+                  street: '$$address.street',
+                  number: '$$address.number',
+                  complement: '$$address.complement',
+                  zipCode: '$$address.zipCode',
+                  city: '$$address.city',
+                  state: '$$address.state',
+                  country: '$$address.country',
+                  cpf: '$$address.cpf',
+                  phoneNumber: '$$address.phoneNumber',
+                  locality: '$$address.locality',
+                },
+              },
+            },
+            formattedBarberServices: {
+              $map: {
+                input: '$barberServices',
+                as: 'service',
+                in: {
+                  id: '$$service._id',
+                  name: '$$service.name',
+                  points: '$$service.points',
+                  maney: '$$service.maney',
+                },
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            id: '$_id',
+            name: 1,
+            email: 1,
+            image: 1,
+            service: 1,
+            certificacoes: 1,
+            descricao: 1,
+            active: 1,
+            points: 1,
+            role: 1,
+            code: 1,
+            startTime: 1,
+            endTime: 1,
+            lunchStartTime: 1,
+            lunchEndTime: 1,
+            addresses: '$formattedAddresses',
+            barberServices: '$formattedBarberServices',
+          },
+        },
+      ];
+
+      const users = await UserModel.aggregate(pipeline);
+      return users.length > 0 ? users[0] : null;
+    } catch (error: any) {
+      throw new Error(`Error getting user by ID with details: ${error.message}`);
+    }
   }
 }

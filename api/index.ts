@@ -56,14 +56,24 @@ app.use(logService.requestLoggerMiddleware('api'));
 
 app.use(
   cors({
-    origin: ['https://voxs.vercel.app', 'http://localhost:3000', 'http://192.168.18.5:3000'],
+    origin: [
+      'https://voxs.vercel.app',
+      'http://localhost:3000',
+      'http://192.168.18.5:3000',
+      'http://localhost:4200',
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token', 'x-user-id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-refresh-token',
+      'x-user-id',
+      'x-request-start-time'
+    ],
     exposedHeaders: ['access-token', 'refresh-token'],
     credentials: true,
   }),
 );
-
 app.use(cookieParser());
 
 app.use(
