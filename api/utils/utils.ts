@@ -347,7 +347,27 @@ export const generateAvailableTimeSlots = async (
 
   const bookedTimeSlots = existingAppointments.map(appointment => appointment.time);
 
-  const availableSlots = potentialSlots.filter(slot => !bookedTimeSlots.includes(slot));
+  // Filtrar horários já reservados
+  let availableSlots = potentialSlots.filter(slot => !bookedTimeSlots.includes(slot));
+
+  // Se a data for hoje, filtrar horários que já passaram
+  const today = moment().format('YYYY-MM-DD');
+  const selectedDate = moment(date).format('YYYY-MM-DD');
+
+  if (selectedDate === today) {
+    const currentTime = moment();
+    availableSlots = availableSlots.filter(slot => {
+      const slotTime = moment(slot, 'HH:mm');
+      const slotDateTime = moment().set({
+        hour: slotTime.hour(),
+        minute: slotTime.minute(),
+        second: 0,
+        millisecond: 0,
+      });
+      // Só incluir horários que são no futuro (pelo menos 1 minuto à frente)
+      return slotDateTime.isAfter(currentTime);
+    });
+  }
 
   return availableSlots;
 };
