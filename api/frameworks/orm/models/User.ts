@@ -1,9 +1,27 @@
-import { Schema, model, Document, Types } from "mongoose";
+import { Document, Schema, Types, model } from 'mongoose';
 
 export interface IPoint {
   barberId: Types.ObjectId;
   barberName: string;
   qtd: number;
+}
+
+export interface IDaySchedule {
+  startTime?: string;
+  endTime?: string;
+  lunchStartTime?: string;
+  lunchEndTime?: string;
+  isWorkingDay?: boolean;
+}
+
+export interface IWeeklySchedule {
+  segunda?: IDaySchedule;
+  terca?: IDaySchedule;
+  quarta?: IDaySchedule;
+  quinta?: IDaySchedule;
+  sexta?: IDaySchedule;
+  sabado?: IDaySchedule;
+  domingo?: IDaySchedule;
 }
 
 export interface IUser extends Document {
@@ -48,14 +66,39 @@ export interface IUser extends Document {
     unavailableEnd?: string;
     unavailableReason?: string;
     useSameHoursEveryday?: boolean;
+    weeklySchedule?: IWeeklySchedule;
   };
 }
 
 const pointSchema = new Schema({
-  barberId: { type: String, ref: "User", required: true, default: "" },
+  barberId: { type: String, ref: 'User', required: true, default: '' },
   barberName: { type: String },
   qtd: { type: Number, required: true, default: 0 },
 });
+
+const dayScheduleSchema = new Schema(
+  {
+    startTime: { type: String },
+    endTime: { type: String },
+    lunchStartTime: { type: String },
+    lunchEndTime: { type: String },
+    isWorkingDay: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
+const weeklyScheduleSchema = new Schema(
+  {
+    segunda: { type: dayScheduleSchema },
+    terca: { type: dayScheduleSchema },
+    quarta: { type: dayScheduleSchema },
+    quinta: { type: dayScheduleSchema },
+    sexta: { type: dayScheduleSchema },
+    sabado: { type: dayScheduleSchema },
+    domingo: { type: dayScheduleSchema },
+  },
+  { _id: false },
+);
 
 const agendaConfigSchema = new Schema(
   {
@@ -74,8 +117,9 @@ const agendaConfigSchema = new Schema(
     unavailableEnd: { type: String },
     unavailableReason: { type: String },
     useSameHoursEveryday: { type: Boolean },
+    weeklySchedule: { type: weeklyScheduleSchema },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const userSchema = new Schema({
@@ -88,7 +132,7 @@ const userSchema = new Schema({
   phone: { type: String },
   birthDate: { type: Date },
   image: { type: String },
-  address: { type: Schema.Types.ObjectId, ref: "Address" },
+  address: { type: Schema.Types.ObjectId, ref: 'Address' },
   googleId: { type: String },
   customerId: { type: String },
   verificationCode: { type: String },
@@ -111,4 +155,4 @@ userSchema.add({
 // Garantir a criação do índice ao registrar o modelo
 userSchema.index({ email: 1 });
 
-export const User = model<IUser>("User", userSchema);
+export const User = model<IUser>('User', userSchema);

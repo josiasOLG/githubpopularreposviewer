@@ -43,27 +43,31 @@ export const getDisponibleTimeSlots = async (req: Request, res: Response) => {
         .json({ error: 'Agenda não configurada ou profissional não encontrado' });
     }
 
-    if (
-      !agendaConfig.startTime ||
-      !agendaConfig.endTime ||
-      !agendaConfig.sessionDuration ||
-      !agendaConfig.breakBetweenSessions
-    ) {
+    if (!agendaConfig.sessionDuration || !agendaConfig.breakBetweenSessions) {
       return res.status(400).json({
         error: 'Configuração de agenda incompleta',
-        message: 'O profissional não configurou todos os parâmetros necessários da agenda',
+        message: 'O profissional não configurou duração da sessão e intervalo entre sessões',
+      });
+    }
+
+    // Se usa weeklySchedule, não precisa validar startTime/endTime global
+    if (!agendaConfig.weeklySchedule && (!agendaConfig.startTime || !agendaConfig.endTime)) {
+      return res.status(400).json({
+        error: 'Configuração de agenda incompleta',
+        message: 'O profissional não configurou horários de trabalho',
       });
     }
 
     const availableSlots = await generateAvailableTimeSlots(
-      agendaConfig.startTime,
-      agendaConfig.endTime,
+      agendaConfig.startTime || '',
+      agendaConfig.endTime || '',
       agendaConfig.sessionDuration,
       agendaConfig.breakBetweenSessions,
       selectedDate,
       barberId,
       agendaConfig.lunchStartTime,
       agendaConfig.lunchEndTime,
+      agendaConfig,
     );
 
     return res.status(200).json({
@@ -105,6 +109,100 @@ export const getAgendaConfigService = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Erro ao obter agendaConfig:', error);
     res.status(500).json({ error: 'Erro ao obter agendaConfig' });
+  }
+};
+
+export const getWeeklyScheduleByDay = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id as string;
+    const dayOfWeek = req.params.day as string;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'ID do usuário é obrigatório' });
+    }
+
+    if (!dayOfWeek) {
+      return res.status(400).json({ error: 'Dia da semana é obrigatório' });
+    }
+
+    const scheduleConfig = await userRepository.getWeeklyScheduleByDay(userId, dayOfWeek);
+
+    if (!scheduleConfig) {
+      return res.status(404).json({
+        error: 'Usuário não encontrado ou agenda não configurada',
+        message: 'Verifique se o usuário existe e possui configuração de agenda',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: scheduleConfig,
+    });
+  } catch (error) {
+    console.error('Erro ao obter configuração do dia:', error);
+
+    if (error instanceof Error && error.message.includes('Dia da semana inválido')) {
+      return res.status(400).json({
+        error: error.message,
+        validDays: ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'],
+      });
+    }
+
+    res.status(500).json({ error: 'Erro interno do servidor ao obter configuração do dia' });
+  }
+};
+
+export const updateWeeklySchedule = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id as string;
+    const { weeklySchedule } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'ID do usuário é obrigatório' });
+    }
+
+    if (!weeklySchedule || typeof weeklySchedule !== 'object') {
+      return res.status(400).json({
+        error: 'Configuração semanal é obrigatória',
+        example: {
+          weeklySchedule: {
+            segunda: {
+              startTime: '08:00',
+              endTime: '18:00',
+              lunchStartTime: '12:00',
+              lunchEndTime: '13:00',
+              isWorkingDay: true,
+            },
+          },
+        },
+      });
+    }
+
+    const updatedUser = await userRepository.updateWeeklySchedule(userId, weeklySchedule);
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Configuração semanal atualizada com sucesso',
+      data: {
+        userId: updatedUser._id,
+        weeklySchedule: updatedUser.agendaConfig?.weeklySchedule,
+      },
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar configuração semanal:', error);
+
+    if (error instanceof Error && error.message.includes('Dias inválidos')) {
+      return res.status(400).json({
+        error: error.message,
+        validDays: ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'],
+      });
+    }
+
+    res.status(500).json({ error: 'Erro interno do servidor ao atualizar configuração semanal' });
   }
 };
 
@@ -525,5 +623,7 @@ router.put('/:id/agenda', updateAgendaConfig);
 router.get('/:id/agenda', getAgendaConfig);
 router.get('/:id/agenda/:service/service', getAgendaConfig);
 router.post('/agenda/horas', getDisponibleTimeSlots);
+router.get('/:id/agenda/semana/:day', getWeeklyScheduleByDay); // Nova rota para obter configuração de agenda por dia da semana
+router.put('/:id/agenda/semana', updateWeeklySchedule); // Nova rota para atualizar configuração semanal da agenda
 
 export default router;

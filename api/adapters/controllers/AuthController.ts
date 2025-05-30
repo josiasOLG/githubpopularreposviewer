@@ -287,7 +287,7 @@ export const recoverPassword = async (req: Request, res: Response) => {
 
   try {
     const user = await userRepository.findByEmail(email);
-    console.log(email);
+
     if (!user) {
       return res.status(404).json({
         error: 'Usuário não encontrado. Por favor, verifique o email fornecido e tente novamente.',
@@ -326,12 +326,8 @@ export const oauth2callback = async (req: Request, res: Response) => {
     const { tokens } = await oauth2Client.getToken(code as string);
     oauth2Client.setCredentials(tokens);
 
-    // Armazene o refresh_token de forma segura
     const refreshToken = tokens.refresh_token;
-    console.log('Refresh Token:', refreshToken);
 
-    // Você pode armazenar o refresh token em um banco de dados ou em um arquivo seguro
-    // Aqui, estamos apenas enviando de volta como resposta para fins de demonstração
     res.status(200).json({
       message:
         'Token de acesso obtido com sucesso. O token de renovação foi gerado e deve ser armazenado em um local seguro para uso futuro.',

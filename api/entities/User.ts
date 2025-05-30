@@ -1,8 +1,45 @@
-import { Types } from "mongoose";
+import { Types } from 'mongoose';
 
 export interface Point {
   barberId: string;
   qtd: number;
+}
+
+export interface DaySchedule {
+  startTime?: string;
+  endTime?: string;
+  lunchStartTime?: string;
+  lunchEndTime?: string;
+  isWorkingDay?: boolean;
+}
+
+export interface WeeklySchedule {
+  segunda?: DaySchedule;
+  terca?: DaySchedule;
+  quarta?: DaySchedule;
+  quinta?: DaySchedule;
+  sexta?: DaySchedule;
+  sabado?: DaySchedule;
+  domingo?: DaySchedule;
+}
+
+export interface AgendaConfig {
+  startTime?: string;
+  endTime?: string;
+  lunchStartTime?: string;
+  lunchEndTime?: string;
+  sessionDuration?: string;
+  breakBetweenSessions?: string;
+  cancellationPolicy?: string;
+  cancellationPenaltyType?: string;
+  cancellationPenaltyValue?: string;
+  modalities?: string[];
+  workDays?: string[];
+  unavailableStart?: string;
+  unavailableEnd?: string;
+  unavailableReason?: string;
+  useSameHoursEveryday?: boolean;
+  weeklySchedule?: WeeklySchedule;
 }
 
 export interface User {
@@ -28,4 +65,5 @@ export interface User {
   interval?: string;
   points?: Point[];
   active?: boolean;
+  agendaConfig?: AgendaConfig;
 }

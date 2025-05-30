@@ -1,13 +1,12 @@
-import { Request, Response } from "express";
+import { Request, Response } from 'express';
 import {
-  createQRCode,
+  deleteQRCode,
   findQRCodeById,
   findQRCodesByUserId,
-  updateQRCode,
-  deleteQRCode,
   generateQRCode,
+  updateQRCode,
   updateQRCodeByBarberIdAndCode,
-} from "../repositories/QrCodeRepository";
+} from '../repositories/QrCodeRepository';
 
 export const createQRCodeController = async (req: Request, res: Response) => {
   try {
@@ -15,7 +14,7 @@ export const createQRCodeController = async (req: Request, res: Response) => {
     const qrCode = await generateQRCode(userId, barberId);
     res.status(201).json(qrCode);
   } catch (error) {
-    res.status(500).json({ error: "Failed to generate QR Code" });
+    res.status(500).json({ error: 'Failed to generate QR Code' });
   }
 };
 
@@ -24,24 +23,21 @@ export const findQRCodeByIdController = async (req: Request, res: Response) => {
     const { id } = req.params;
     const qrCode = await findQRCodeById(id);
     if (!qrCode) {
-      return res.status(404).json({ error: "QR Code not found" });
+      return res.status(404).json({ error: 'QR Code not found' });
     }
     res.status(200).json(qrCode);
   } catch (error) {
-    res.status(500).json({ error: "Failed to retrieve QR Code" });
+    res.status(500).json({ error: 'Failed to retrieve QR Code' });
   }
 };
 
-export const findQRCodesByUserIdController = async (
-  req: Request,
-  res: Response
-) => {
+export const findQRCodesByUserIdController = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const qrCodes = await findQRCodesByUserId(userId);
     res.status(200).json(qrCodes);
   } catch (error) {
-    res.status(500).json({ error: "Failed to retrieve QR Codes" });
+    res.status(500).json({ error: 'Failed to retrieve QR Codes' });
   }
 };
 
@@ -51,11 +47,11 @@ export const updateQRCodeController = async (req: Request, res: Response) => {
     const qrCodeData = req.body;
     const updatedQRCode = await updateQRCode(id, qrCodeData);
     if (!updatedQRCode) {
-      return res.status(404).json({ error: "QR Code not found" });
+      return res.status(404).json({ error: 'QR Code not found' });
     }
     res.status(200).json(updatedQRCode);
   } catch (error) {
-    res.status(500).json({ error: "Failed to update QR Code" });
+    res.status(500).json({ error: 'Failed to update QR Code' });
   }
 };
 
@@ -64,33 +60,28 @@ export const deleteQRCodeController = async (req: Request, res: Response) => {
     const { id } = req.params;
     const deleted = await deleteQRCode(id);
     if (!deleted) {
-      return res.status(404).json({ error: "QR Code not found" });
+      return res.status(404).json({ error: 'QR Code not found' });
     }
-    res.status(200).json({ message: "QR Code deleted successfully" });
+    res.status(200).json({ message: 'QR Code deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: "Failed to delete QR Code" });
+    res.status(500).json({ error: 'Failed to delete QR Code' });
   }
 };
 
-export const updateQRCodeByBarberIdAndCodeController = async (
-  req: Request,
-  res: Response
-) => {
+export const updateQRCodeByBarberIdAndCodeController = async (req: Request, res: Response) => {
   try {
     const { barberId } = req.params;
     const { code } = req.body;
     const updatedQRCode = await updateQRCodeByBarberIdAndCode(barberId, code);
-    console.log("updatedQRCode >>", updatedQRCode);
+
     if (!updatedQRCode) {
-      return res.status(404).json({ error: "QR Code not found" });
+      return res.status(404).json({ error: 'QR Code not found' });
     }
     res.status(200).json({
-      message: "QR Code updated and user points reset successfully",
+      message: 'QR Code updated and user points reset successfully',
       qrCode: updatedQRCode,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to update QR Code and reset user points" });
+    res.status(500).json({ error: 'Failed to update QR Code and reset user points' });
   }
 };

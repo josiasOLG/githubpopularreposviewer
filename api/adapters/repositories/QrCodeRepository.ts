@@ -1,13 +1,10 @@
-import { Types } from "mongoose";
-import { QRCode as QRCodeModel } from "../../frameworks/orm/models/QrCode";
-import { IQRCode } from "../../entities/QrCode";
-import QRCode from "qrcode";
-import { v4 as uuidv4 } from "uuid";
-import { User } from "../../frameworks/orm/models/User";
+import { Types } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+import { IQRCode } from '../../entities/QrCode';
+import { QRCode as QRCodeModel } from '../../frameworks/orm/models/QrCode';
+import { User } from '../../frameworks/orm/models/User';
 
-export const createQRCode = async (
-  qrCodeData: Partial<IQRCode>
-): Promise<IQRCode> => {
+export const createQRCode = async (qrCodeData: Partial<IQRCode>): Promise<IQRCode> => {
   try {
     const newQRCode = new QRCodeModel(qrCodeData);
     await newQRCode.save();
@@ -20,7 +17,7 @@ export const createQRCode = async (
 export const findQRCodeById = async (id: string): Promise<IQRCode | null> => {
   try {
     if (!Types.ObjectId.isValid(id)) {
-      throw new Error("Invalid ID format");
+      throw new Error('Invalid ID format');
     }
     const qrCode = await QRCodeModel.findById(id);
     return qrCode ? qrCode.toObject() : null;
@@ -29,15 +26,13 @@ export const findQRCodeById = async (id: string): Promise<IQRCode | null> => {
   }
 };
 
-export const findQRCodesByUserId = async (
-  userId: string
-): Promise<IQRCode[]> => {
+export const findQRCodesByUserId = async (userId: string): Promise<IQRCode[]> => {
   try {
     if (!Types.ObjectId.isValid(userId)) {
-      throw new Error("Invalid ID format");
+      throw new Error('Invalid ID format');
     }
     const qrCodes = await QRCodeModel.find({ userId });
-    return qrCodes.map((qrCode) => qrCode.toObject());
+    return qrCodes.map(qrCode => qrCode.toObject());
   } catch (error: any) {
     throw new Error(`Error finding QR Codes by user ID: ${error.message}`);
   }
@@ -45,11 +40,11 @@ export const findQRCodesByUserId = async (
 
 export const updateQRCode = async (
   id: string,
-  qrCodeData: Partial<IQRCode>
+  qrCodeData: Partial<IQRCode>,
 ): Promise<IQRCode | null> => {
   try {
     if (!Types.ObjectId.isValid(id)) {
-      throw new Error("Invalid ID format");
+      throw new Error('Invalid ID format');
     }
     const updatedQRCode = await QRCodeModel.findByIdAndUpdate(id, qrCodeData, {
       new: true,
@@ -63,7 +58,7 @@ export const updateQRCode = async (
 export const deleteQRCode = async (id: string): Promise<boolean> => {
   try {
     if (!Types.ObjectId.isValid(id)) {
-      throw new Error("Invalid ID format");
+      throw new Error('Invalid ID format');
     }
     const result = await QRCodeModel.findByIdAndDelete(id);
     return result ? true : false;
@@ -72,10 +67,7 @@ export const deleteQRCode = async (id: string): Promise<boolean> => {
   }
 };
 
-export const generateQRCode = async (
-  userId: string,
-  barberId: string
-): Promise<IQRCode> => {
+export const generateQRCode = async (userId: string, barberId: string): Promise<IQRCode> => {
   try {
     const existingQRCode = await QRCodeModel.findOne({
       userId,
@@ -86,9 +78,9 @@ export const generateQRCode = async (
       return existingQRCode.toObject();
     }
 
-    let numericUUID = "";
+    let numericUUID = '';
     while (numericUUID.length < 6) {
-      const uuid = uuidv4().replace(/[^0-9]/g, "");
+      const uuid = uuidv4().replace(/[^0-9]/g, '');
       numericUUID += uuid;
     }
     const code = numericUUID.substring(0, 6);
@@ -108,7 +100,7 @@ export const generateQRCode = async (
 
 export const updateQRCodeByBarberIdAndCode = async (
   barberId: string,
-  code: string
+  code: string,
 ): Promise<IQRCode | null> => {
   const session = await QRCodeModel.startSession();
   session.startTransaction();
@@ -117,9 +109,8 @@ export const updateQRCodeByBarberIdAndCode = async (
     const qrCode = await QRCodeModel.findOneAndUpdate(
       { barberId, code, used: false },
       { used: true },
-      { new: true }
+      { new: true },
     ).session(session);
-    console.log("qrCode >>", qrCode);
 
     if (!qrCode) {
       await session.abortTransaction();
@@ -129,24 +120,21 @@ export const updateQRCodeByBarberIdAndCode = async (
 
     const user = await User.findOne({
       _id: qrCode.userId,
-      "points.barberId": barberId,
+      'points.barberId': barberId,
     }).session(session);
-    console.log("user >>", user);
+    console.log('user >>', user);
     if (!user || !user.points) {
       await session.abortTransaction();
       session.endSession();
-      throw new Error(
-        `User with barberId ${barberId} not found or user has no points`
-      );
+      throw new Error(`User with barberId ${barberId} not found or user has no points`);
     }
 
-    user.points = user.points.map((point) => {
+    user.points = user.points.map(point => {
       if (point.barberId.toString() === barberId) {
         point.qtd = 0;
       }
       return point;
     });
-    console.log("user.points >>", user.points);
     await user.save({ session });
     await session.commitTransaction();
     session.endSession();
@@ -154,8 +142,6 @@ export const updateQRCodeByBarberIdAndCode = async (
   } catch (error: any) {
     await session.abortTransaction();
     session.endSession();
-    throw new Error(
-      `Error updating QR Code by BarberId and Code: ${error.message}`
-    );
+    throw new Error(`Error updating QR Code by BarberId and Code: ${error.message}`);
   }
 };

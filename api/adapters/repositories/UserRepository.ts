@@ -14,7 +14,38 @@ export class UserRepository {
   }
 
   async updateAgendaConfig(userId: string, agendaConfig: any): Promise<User | null> {
-    const user = await UserModel.findByIdAndUpdate(userId, { agendaConfig }, { new: true });
+    if (agendaConfig.weeklySchedule) {
+      const dayMapping: Record<string, string> = {
+        Segunda: 'segunda',
+        Terça: 'terca',
+        Quarta: 'quarta',
+        Quinta: 'quinta',
+        Sexta: 'sexta',
+        Sábado: 'sabado',
+        Domingo: 'domingo',
+        segunda: 'segunda',
+        terca: 'terca',
+        quarta: 'quarta',
+        quinta: 'quinta',
+        sexta: 'sexta',
+        sabado: 'sabado',
+        domingo: 'domingo',
+      };
+      const normalizedWeeklySchedule: Record<string, any> = {};
+      for (const [day, config] of Object.entries(agendaConfig.weeklySchedule)) {
+        const normalizedDay = dayMapping[day];
+        if (normalizedDay) {
+          normalizedWeeklySchedule[normalizedDay] = config;
+        }
+      }
+      agendaConfig.weeklySchedule = normalizedWeeklySchedule;
+    }
+
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      { agendaConfig },
+      { new: true, runValidators: true },
+    );
     return user ? user.toObject() : null;
   }
 
@@ -30,6 +61,69 @@ export class UserRepository {
     }).select('agendaConfig');
 
     return user ? user.toObject().agendaConfig : null;
+  }
+
+  async getWeeklyScheduleByDay(userId: string, dayOfWeek: string): Promise<any | null> {
+    const validDays = [
+      'segunda',
+      'terca',
+      'quarta',
+      'quinta',
+      'sexta',
+      'sabado',
+      'domingo',
+    ] as const;
+    type ValidDay = (typeof validDays)[number];
+
+    const normalizedDay = dayOfWeek.toLowerCase() as ValidDay;
+
+    if (!validDays.includes(normalizedDay)) {
+      throw new Error(
+        'Dia da semana inválido. Use: segunda, terca, quarta, quinta, sexta, sabado, domingo',
+      );
+    }
+
+    const user = await UserModel.findById(userId)
+      .select(
+        `agendaConfig.weeklySchedule.${normalizedDay} agendaConfig.useSameHoursEveryday agendaConfig.startTime agendaConfig.endTime agendaConfig.lunchStartTime agendaConfig.lunchEndTime`,
+      )
+      .lean();
+
+    if (!user || !user.agendaConfig) {
+      return null;
+    }
+
+    const { agendaConfig } = user;
+
+    // Se usa os mesmos horários todos os dias, retorna a configuração geral
+    if (agendaConfig.useSameHoursEveryday) {
+      return {
+        dayOfWeek: normalizedDay,
+        startTime: agendaConfig.startTime,
+        endTime: agendaConfig.endTime,
+        lunchStartTime: agendaConfig.lunchStartTime,
+        lunchEndTime: agendaConfig.lunchEndTime,
+        isWorkingDay: true,
+        useSameHoursEveryday: true,
+      };
+    }
+
+    // Caso contrário, retorna a configuração específica do dia
+    const dayConfig = agendaConfig.weeklySchedule?.[normalizedDay];
+
+    if (!dayConfig) {
+      return {
+        dayOfWeek: normalizedDay,
+        isWorkingDay: false,
+        message: 'Dia não configurado ou não é dia de trabalho',
+      };
+    }
+
+    return {
+      dayOfWeek: normalizedDay,
+      ...dayConfig,
+      useSameHoursEveryday: false,
+    };
   }
 
   async update(userId: any, userData: Partial<User>): Promise<User | null> {
@@ -326,5 +420,35 @@ export class UserRepository {
     } catch (error: any) {
       throw new Error(`Error getting user by ID with details: ${error.message}`);
     }
+  }
+
+  async updateWeeklySchedule(
+    userId: string,
+    weeklySchedule: Record<string, any>,
+  ): Promise<User | null> {
+    const validDays = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+
+    // Validar se apenas dias válidos estão sendo atualizados
+    const providedDays = Object.keys(weeklySchedule);
+    const invalidDays = providedDays.filter(day => !validDays.includes(day));
+
+    if (invalidDays.length > 0) {
+      throw new Error(`Dias inválidos fornecidos: ${invalidDays.join(', ')}`);
+    }
+
+    const updateObject: Record<string, any> = {};
+
+    // Construir o objeto de atualização dinamicamente
+    for (const [day, config] of Object.entries(weeklySchedule)) {
+      updateObject[`agendaConfig.weeklySchedule.${day}`] = config;
+    }
+
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: updateObject },
+      { new: true, runValidators: true },
+    ).lean();
+
+    return user ? (user as any) : null;
   }
 }

@@ -1,38 +1,37 @@
 // utils/mailer.ts
-import nodemailer from "nodemailer";
-import { google } from "googleapis";
-import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { google } from 'googleapis';
+import nodemailer from 'nodemailer';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 const OAuth2 = google.auth.OAuth2;
 
 const createTransporter = async () => {
   const oauth2Client = new OAuth2(
-    "4049569468-i9sr1bmh24j46p5168ijagt1job6lm06.apps.googleusercontent.com", // Substitua pelo seu ID do cliente
-    "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", // Substitua pelo seu segredo do cliente
-    "https://developers.google.com/oauthplayground" // URL de redirecionamento
+    '4049569468-i9sr1bmh24j46p5168ijagt1job6lm06.apps.googleusercontent.com', // Substitua pelo seu ID do cliente
+    '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', // Substitua pelo seu segredo do cliente
+    'https://developers.google.com/oauthplayground', // URL de redirecionamento
   );
 
   oauth2Client.setCredentials({
     refresh_token:
-      "1//04vuhy3d5HfLvCgYIARAAGAQSNgF-L9IrnGlQI5zG7JDdDqBgQwk4iRhjptAOsWldNgm3GvzAe80I6wpiYY4KgQKPeQGIPKePFw", // Substitua pelo seu novo token de atualização
+      '1//04vuhy3d5HfLvCgYIARAAGAQSNgF-L9IrnGlQI5zG7JDdDqBgQwk4iRhjptAOsWldNgm3GvzAe80I6wpiYY4KgQKPeQGIPKePFw', // Substitua pelo seu novo token de atualização
   });
 
   const accessToken = await oauth2Client.getAccessToken();
 
   if (!accessToken.token) {
-    throw new Error("Failed to create access token");
+    throw new Error('Failed to create access token');
   }
 
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    service: 'gmail',
     auth: {
-      type: "OAuth2",
-      user: "josiasoliveira111@gmail.com", // Substitua pelo seu e-mail
-      clientId:
-        "4049569468-i9sr1bmh24j46p5168ijagt1job6lm06.apps.googleusercontent.com",
-      clientSecret: "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",
+      type: 'OAuth2',
+      user: 'josiasoliveira111@gmail.com', // Substitua pelo seu e-mail
+      clientId: '4049569468-i9sr1bmh24j46p5168ijagt1job6lm06.apps.googleusercontent.com',
+      clientSecret: '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',
       refreshToken:
-        "1//04vuhy3d5HfLvCgYIARAAGAQSNgF-L9IrnGlQI5zG7JDdDqBgQwk4iRhjptAOsWldNgm3GvzAe80I6wpiYY4KgQKPeQGIPKePFw", // Substitua pelo seu novo token de atualização
+        '1//04vuhy3d5HfLvCgYIARAAGAQSNgF-L9IrnGlQI5zG7JDdDqBgQwk4iRhjptAOsWldNgm3GvzAe80I6wpiYY4KgQKPeQGIPKePFw', // Substitua pelo seu novo token de atualização
       accessToken: accessToken.token,
     },
   } as SMTPTransport.Options);
@@ -44,7 +43,7 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
   const transporter = await createTransporter();
 
   const mailOptions = {
-    from: "josiasoliveira111@gmail.com", // Substitua pelo seu e-mail
+    from: 'josiasoliveira111@gmail.com', // Substitua pelo seu e-mail
     to,
     subject,
     text,
@@ -52,8 +51,7 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent: " + info.response);
   } catch (error) {
-    console.error("Error sending email: ", error);
+    console.error('Error sending email: ', error);
   }
 };

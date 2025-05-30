@@ -94,7 +94,6 @@ export const updateBarberService = async (req: Request, res: Response) => {
 
 export const deleteBarberService = async (req: Request, res: Response) => {
   try {
-    console.log(req.params.id);
     await barberServiceRepository.delete(req.params.id);
     res.sendStatus(204);
   } catch (error) {

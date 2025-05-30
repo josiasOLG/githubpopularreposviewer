@@ -247,6 +247,7 @@ export const generateAvailableTimeSlots = async (
   barberId: string,
   lunchStartTime?: string,
   lunchEndTime?: string,
+  agendaConfig?: any,
 ): Promise<string[]> => {
   const slots: string[] = [];
 
@@ -258,14 +259,57 @@ export const generateAvailableTimeSlots = async (
     return parseInt(timeString, 10);
   };
 
+  // Função para obter o dia da semana em português
+  const getDayOfWeek = (date: string): string => {
+    const dayMapping = {
+      0: 'domingo',
+      1: 'segunda',
+      2: 'terca',
+      3: 'quarta',
+      4: 'quinta',
+      5: 'sexta',
+      6: 'sabado',
+    };
+    const dayIndex = moment(date).day();
+    return dayMapping[dayIndex as keyof typeof dayMapping];
+  };
+
+  // Determinar os horários a serem usados
+  let actualStartTime = startTime;
+  let actualEndTime = endTime;
+  let actualLunchStartTime = lunchStartTime;
+  let actualLunchEndTime = lunchEndTime;
+
+  // Se tiver weeklySchedule e não usar os mesmos horários todos os dias
+  if (agendaConfig?.weeklySchedule && !agendaConfig?.useSameHoursEveryday) {
+    const dayOfWeek = getDayOfWeek(date);
+    const dayConfig = agendaConfig.weeklySchedule[dayOfWeek];
+
+    if (dayConfig) {
+      // Se o dia não é dia de trabalho, retorna array vazio
+      if (dayConfig.isWorkingDay === false) {
+        return [];
+      }
+
+      // Usar horários específicos do dia se disponíveis
+      actualStartTime = dayConfig.startTime || startTime;
+      actualEndTime = dayConfig.endTime || endTime;
+      actualLunchStartTime = dayConfig.lunchStartTime || lunchStartTime;
+      actualLunchEndTime = dayConfig.lunchEndTime || lunchEndTime;
+    } else {
+      // Se o dia não está configurado, retorna array vazio
+      return [];
+    }
+  }
+
   const session = convertToMinutes(sessionDuration);
   const breakTime = convertToMinutes(breakBetweenSessions);
 
-  let current = moment(startTime, 'HH:mm');
-  const end = moment(endTime, 'HH:mm');
+  let current = moment(actualStartTime, 'HH:mm');
+  const end = moment(actualEndTime, 'HH:mm');
 
-  const lunchStart = lunchStartTime ? moment(lunchStartTime, 'HH:mm') : null;
-  const lunchEnd = lunchEndTime ? moment(lunchEndTime, 'HH:mm') : null;
+  const lunchStart = actualLunchStartTime ? moment(actualLunchStartTime, 'HH:mm') : null;
+  const lunchEnd = actualLunchEndTime ? moment(actualLunchEndTime, 'HH:mm') : null;
 
   const hasLunch = lunchStart && lunchEnd;
 
