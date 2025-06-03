@@ -32,6 +32,7 @@ import notificationRouter from './adapters/controllers/NotificationController';
 import userRouter from './adapters/controllers/UserController';
 import addressRouter from './adapters/routes/addressRoutes';
 import appServiceRoutes from './adapters/routes/appServiceRoutes';
+import guidanceRoutes from './adapters/routes/guidanceRoutes';
 import logRoutes from './adapters/routes/logRoutes';
 import pdfRoutes from './adapters/routes/pdfRoutes';
 import qrCodeRoutes from './adapters/routes/qrCodeRoutes';
@@ -68,7 +69,7 @@ app.use(
       'Authorization',
       'x-refresh-token',
       'x-user-id',
-      'x-request-start-time'
+      'x-request-start-time',
     ],
     exposedHeaders: ['access-token', 'refresh-token'],
     credentials: true,
@@ -114,6 +115,7 @@ app.use('/qrcode', authMiddleware, qrCodeRoutes);
 app.use('/addresses', authMiddleware, addressRouter);
 app.use('/subscription', subscriptionRoutes);
 app.use('/services', authMiddleware, serviceRoutes);
+app.use('/guidances', authMiddleware, guidanceRoutes);
 app.use('/pdf', authMiddleware, pdfRoutes);
 app.use('/logs', authMiddleware, logRoutes);
 
