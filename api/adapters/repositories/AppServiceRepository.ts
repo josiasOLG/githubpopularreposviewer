@@ -32,6 +32,7 @@ export interface IAppServiceRepository {
   ): Promise<IAppService | null>;
   removeActivity(serviceId: string, activityId: string): Promise<IAppService | null>;
   toggleActivityActive(serviceId: string, activityId: string): Promise<IAppService | null>;
+  findCategoryById(serviceId: string, categoryId: string): Promise<any | null>;
 }
 
 export class AppServiceRepository implements IAppServiceRepository {
@@ -343,6 +344,28 @@ export class AppServiceRepository implements IAppServiceRepository {
       return updatedService ? updatedService.toObject() : null;
     } catch (error: any) {
       throw new Error(`Error toggling activity active state: ${error.message}`);
+    }
+  }
+
+  async findCategoryById(serviceId: string, categoryId: string): Promise<any | null> {
+    try {
+      if (!Types.ObjectId.isValid(serviceId)) {
+        throw new Error('Invalid service ID format');
+      }
+
+      const appService = await AppService.findById(serviceId);
+      if (!appService) {
+        return null;
+      }
+
+      // Buscar a categoria pelo ID
+      const category = appService.categories.find(
+        category => category._id && category._id.toString() === categoryId,
+      );
+
+      return category || null;
+    } catch (error: any) {
+      throw new Error(`Error finding category by ID: ${error.message}`);
     }
   }
 }

@@ -10,6 +10,7 @@ export interface IGuidanceRepository {
   findByUserId(userId: string): Promise<IGuidance[]>;
   findByProfessionalId(professionalId: string): Promise<IGuidance[]>;
   findByAppointmentId(appointmentId: string): Promise<IGuidance[]>;
+  findByAppointmentIdWithCategoryName(appointmentId: string): Promise<any[]>;
   findByAppServiceAndCategory(appServiceId: string, categoryId: string): Promise<IGuidance[]>;
   findByDateRange(startDate: Date, endDate: Date): Promise<IGuidance[]>;
   findActiveByDateRange(startDate: Date, endDate: Date): Promise<IGuidance[]>;
@@ -125,6 +126,116 @@ export class GuidanceRepository implements IGuidanceRepository {
         .lean();
     } catch (error: any) {
       throw new Error(`Error finding guidances by appointment: ${error.message}`);
+    }
+  }
+
+  async findByAppointmentIdWithCategoryName(appointmentId: string): Promise<any[]> {
+    try {
+      if (!Types.ObjectId.isValid(appointmentId)) {
+        return [];
+      }
+
+      // Usar agregação do MongoDB para buscar as orientações com nomes de categorias em uma única consulta
+      const guidances = await Guidance.aggregate([
+        // Filtrar por appointmentId
+        {
+          $match: {
+            appointmentId: new Types.ObjectId(appointmentId),
+          },
+        },
+        // Buscar informações do serviço relacionado
+        {
+          $lookup: {
+            from: 'appservices',
+            localField: 'appServiceId',
+            foreignField: '_id',
+            as: 'appService',
+          },
+        },
+        // Descompactar o array appService (terá apenas um elemento)
+        { $unwind: '$appService' },
+        // Adicionar um campo para o nome da categoria
+        {
+          $addFields: {
+            categoryName: {
+              $let: {
+                vars: {
+                  categoryArray: {
+                    $filter: {
+                      input: '$appService.categories',
+                      as: 'category',
+                      cond: { $eq: ['$$category._id', { $toObjectId: '$categoryId' }] },
+                    },
+                  },
+                },
+                in: {
+                  $cond: {
+                    if: { $gt: [{ $size: '$$categoryArray' }, 0] },
+                    then: { $arrayElemAt: ['$$categoryArray.name', 0] },
+                    else: null,
+                  },
+                },
+              },
+            },
+          },
+        },
+        // Buscar informações do usuário relacionado
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'userId',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+        // Descompactar o array user (terá apenas um elemento)
+        { $unwind: '$user' },
+        // Buscar informações do profissional relacionado
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'professionalId',
+            foreignField: '_id',
+            as: 'professional',
+          },
+        },
+        // Descompactar o array professional (terá apenas um elemento)
+        { $unwind: '$professional' },
+        // Selecionar apenas os campos necessários para a resposta
+        {
+          $project: {
+            _id: 1,
+            title: 1,
+            description: 1,
+            startDate: 1,
+            endDate: 1,
+            active: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            attachments: 1,
+            appointmentId: 1,
+            categoryId: 1,
+            categoryName: 1,
+            'appService._id': 1,
+            'appService.name': 1,
+            'appService.description': 1,
+            'user._id': 1,
+            'user.name': 1,
+            'user.email': 1,
+            'professional._id': 1,
+            'professional.name': 1,
+            'professional.email': 1,
+          },
+        },
+        // Ordenar por data de criação (mais recente primeiro)
+        { $sort: { createdAt: -1 } },
+      ]);
+
+      return guidances;
+    } catch (error: any) {
+      throw new Error(
+        `Error finding guidances by appointment with category name: ${error.message}`,
+      );
     }
   }
 

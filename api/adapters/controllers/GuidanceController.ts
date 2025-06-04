@@ -220,7 +220,8 @@ export const getGuidancesByAppointmentIdController = async (
       return;
     }
 
-    const guidances = await guidanceRepository.findByAppointmentId(appointmentId);
+    // Usar o método otimizado com agregação do MongoDB
+    const guidances = await guidanceRepository.findByAppointmentIdWithCategoryName(appointmentId);
     res.json(guidances);
   } catch (error: any) {
     res.status(500).json({
