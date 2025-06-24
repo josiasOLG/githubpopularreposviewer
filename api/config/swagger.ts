@@ -1606,6 +1606,203 @@ export default {
         },
       },
     },
+    '/advertisements': {
+      get: {
+        tags: ['Advertisement'],
+        summary: 'Get advertisements by professional',
+        responses: {
+          '200': {
+            description: 'List of professional advertisements',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/Advertisement',
+                  },
+                },
+              },
+            },
+          },
+          '500': {
+            description: 'Failed to get advertisements',
+          },
+        },
+      },
+      post: {
+        tags: ['Advertisement'],
+        summary: 'Create a new advertisement',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/AdvertisementInput',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Advertisement created successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Advertisement',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad request - missing required fields',
+          },
+          '500': {
+            description: 'Failed to create advertisement',
+          },
+        },
+      },
+    },
+    '/advertisements/{id}': {
+      get: {
+        tags: ['Advertisement'],
+        summary: 'Get advertisement by ID',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Advertisement details',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Advertisement',
+                },
+              },
+            },
+          },
+          '404': {
+            description: 'Advertisement not found',
+          },
+          '500': {
+            description: 'Failed to get advertisement',
+          },
+        },
+      },
+      put: {
+        tags: ['Advertisement'],
+        summary: 'Update advertisement',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/AdvertisementUpdate',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Advertisement updated successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Advertisement',
+                },
+              },
+            },
+          },
+          '403': {
+            description: 'Not authorized to update this advertisement',
+          },
+          '404': {
+            description: 'Advertisement not found',
+          },
+          '500': {
+            description: 'Failed to update advertisement',
+          },
+        },
+      },
+      delete: {
+        tags: ['Advertisement'],
+        summary: 'Delete advertisement',
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '204': {
+            description: 'Advertisement deleted successfully',
+          },
+          '403': {
+            description: 'Not authorized to delete this advertisement',
+          },
+          '404': {
+            description: 'Advertisement not found',
+          },
+          '500': {
+            description: 'Failed to delete advertisement',
+          },
+        },
+      },
+    },
+    '/advertisements/for-user/{userId}': {
+      get: {
+        tags: ['Advertisement'],
+        summary: 'Get advertisements for user',
+        parameters: [
+          {
+            name: 'userId',
+            in: 'path',
+            required: false,
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'List of advertisements for user',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/Advertisement',
+                  },
+                },
+              },
+            },
+          },
+          '500': {
+            description: 'Failed to get advertisements for user',
+          },
+        },
+      },
+    },
   },
   components: {
     securitySchemes: {
@@ -2184,6 +2381,181 @@ export default {
           'startDate',
           'endDate',
         ],
+      },
+      Advertisement: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID único do anúncio',
+          },
+          professionalId: {
+            type: 'string',
+            description: 'ID do profissional que criou o anúncio',
+          },
+          userId: {
+            type: 'string',
+            description: 'ID do usuário específico (opcional)',
+          },
+          appointmentId: {
+            type: 'string',
+            description: 'ID do agendamento relacionado (opcional)',
+          },
+          appServiceId: {
+            type: 'string',
+            description: 'ID do serviço relacionado (opcional)',
+          },
+          title: {
+            type: 'string',
+            description: 'Título do anúncio',
+          },
+          description: {
+            type: 'string',
+            description: 'Descrição detalhada do anúncio',
+          },
+          targetType: {
+            type: 'string',
+            enum: ['MY_CLIENTS', 'NON_APPOINTMENT_USERS', 'ALL'],
+            description: 'Tipo de público-alvo',
+          },
+          startDate: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Data de início da validade',
+          },
+          endDate: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Data de fim da validade',
+          },
+          attachments: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/Attachment',
+            },
+            description: 'Anexos do anúncio',
+          },
+          active: {
+            type: 'boolean',
+            default: true,
+            description: 'Status do anúncio',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Data de criação',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Data da última atualização',
+          },
+        },
+        required: ['professionalId', 'title', 'description', 'targetType', 'startDate', 'endDate'],
+      },
+      AdvertisementInput: {
+        type: 'object',
+        properties: {
+          userId: {
+            type: 'string',
+            description: 'ID do usuário específico (opcional)',
+          },
+          appointmentId: {
+            type: 'string',
+            description: 'ID do agendamento relacionado (opcional)',
+          },
+          appServiceId: {
+            type: 'string',
+            description: 'ID do serviço relacionado (opcional)',
+          },
+          title: {
+            type: 'string',
+            description: 'Título do anúncio',
+          },
+          description: {
+            type: 'string',
+            description: 'Descrição detalhada do anúncio',
+          },
+          targetType: {
+            type: 'string',
+            enum: ['MY_CLIENTS', 'NON_APPOINTMENT_USERS', 'ALL'],
+            description: 'Tipo de público-alvo',
+          },
+          startDate: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Data de início da validade',
+          },
+          endDate: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Data de fim da validade',
+          },
+          attachments: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/Attachment',
+            },
+            description: 'Anexos do anúncio',
+          },
+          active: {
+            type: 'boolean',
+            default: true,
+            description: 'Status do anúncio',
+          },
+        },
+        required: ['title', 'description', 'targetType', 'startDate', 'endDate'],
+      },
+      AdvertisementUpdate: {
+        type: 'object',
+        properties: {
+          userId: {
+            type: 'string',
+            description: 'ID do usuário específico (opcional)',
+          },
+          appointmentId: {
+            type: 'string',
+            description: 'ID do agendamento relacionado (opcional)',
+          },
+          appServiceId: {
+            type: 'string',
+            description: 'ID do serviço relacionado (opcional)',
+          },
+          title: {
+            type: 'string',
+            description: 'Título do anúncio',
+          },
+          description: {
+            type: 'string',
+            description: 'Descrição detalhada do anúncio',
+          },
+          targetType: {
+            type: 'string',
+            enum: ['MY_CLIENTS', 'NON_APPOINTMENT_USERS', 'ALL'],
+            description: 'Tipo de público-alvo',
+          },
+          startDate: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Data de início da validade',
+          },
+          endDate: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Data de fim da validade',
+          },
+          attachments: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/Attachment',
+            },
+            description: 'Anexos do anúncio',
+          },
+          active: {
+            type: 'boolean',
+            description: 'Status do anúncio',
+          },
+        },
       },
     },
   },

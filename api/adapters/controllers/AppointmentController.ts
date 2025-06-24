@@ -33,6 +33,14 @@ export const createAppointment = async (req: Request, res: Response) => {
       modality,
       numberBarber,
       nomeUser,
+      manual,
+      hashuser,
+      status,
+      statusAprovacao,
+      userName,
+      userEmail,
+      userCpf,
+      userAddress,
     } = req.body;
 
     // Verificar se o profissional está ativo
@@ -49,8 +57,8 @@ export const createAppointment = async (req: Request, res: Response) => {
       barberId,
       date,
       time,
-      status: 'pending',
-      statusAprovacao: '',
+      status: status ? status : 'pending',
+      statusAprovacao: statusAprovacao ? statusAprovacao : 'pending',
       service,
       notes,
       idServico,
@@ -59,7 +67,13 @@ export const createAppointment = async (req: Request, res: Response) => {
       color,
       userNumber,
       modality,
-      active: true, // Garantir que novos agendamentos sejam criados como ativos
+      active: true,
+      manual,
+      hashuser,
+      userName,
+      userEmail,
+      userCpf,
+      userAddress,
     });
 
     let whatsappUrl = null;
@@ -341,7 +355,7 @@ export const getAllAppointmentsByUserId = async (req: Request, res: Response) =>
     // Construir a query base para agendamentos ativos
     const query: any = {
       userId,
-      active: true,
+      active: false,
     };
 
     // Adicionar filtro por serviço se fornecido
@@ -382,6 +396,108 @@ export const getAllAppointmentsByUserId = async (req: Request, res: Response) =>
   }
 };
 
+export const getAllAppointmentsByBarberIdManual = async (req: Request, res: Response) => {
+  try {
+    const { barberId } = req.params;
+    const { filter } = req.query;
+    const timezone = 'America/Sao_Paulo';
+
+    let query: any = {
+      barberId,
+      active: true,
+      manual: true,
+    };
+
+    if (filter && filter !== 'all') {
+      let startDate = moment.tz(timezone).startOf('day');
+      let endDate = moment.tz(timezone).endOf('day');
+
+      switch (filter) {
+        case 'today':
+          startDate = moment.tz(timezone).startOf('day');
+          endDate = moment.tz(timezone).endOf('day');
+          break;
+        case 'week':
+          startDate = moment.tz(timezone).startOf('isoWeek');
+          endDate = moment.tz(timezone).endOf('isoWeek');
+          break;
+        case 'month':
+          startDate = moment.tz(timezone).startOf('month');
+          endDate = moment.tz(timezone).endOf('month');
+          break;
+        default:
+          startDate = moment.tz(timezone).startOf('day');
+          endDate = moment.tz(timezone).endOf('day');
+          break;
+      }
+
+      const utcStartDate = startDate.toDate();
+      const utcEndDate = endDate.toDate();
+      query.create = { $gte: utcStartDate, $lt: utcEndDate };
+    }
+
+    // Buscar os agendamentos ativos do profissional
+    const appointments = await Appointment.find(query);
+
+    // Extrair todos os userIds para fazer uma única consulta ao banco
+    const userIds = appointments.map(appointment => appointment.userId);
+
+    // Buscar apenas usuários ativos
+    const users = await User.find(
+      {
+        _id: { $in: userIds },
+        active: true, // Garantir que apenas usuários ativos sejam retornados
+      },
+      'name email phone image birthDate descricao points',
+    ).lean();
+
+    const userMap = new Map();
+    users.forEach(user => {
+      userMap.set(user._id.toString(), user);
+    });
+
+    const formattedAppointments = appointments.map((appointment: any) => {
+      const user = userMap.get(appointment.userId.toString()) || {};
+
+      return {
+        id: appointment._id,
+        userId: appointment.userId,
+        userName: appointment.userName,
+        userEmail: appointment.userEmail,
+        userPhone: appointment.userNumber,
+        userAddress: appointment.userAddress,
+        userCpf: appointment.userCpf,
+        userImage: user.image,
+        userBirthDate: user.birthDate,
+        userDescription: user.descricao,
+        userPoints:
+          user.points?.find((p: any) => p.barberId.toString() === barberId.toString())?.qtd || 0,
+        date: appointment.date,
+        time: appointment.time,
+        status: appointment.status,
+        statusAprovacao: appointment.statusAprovacao,
+        statusMensage: appointment.statusMensage,
+        service: appointment.service,
+        notes: appointment.notes,
+        statusPoint: appointment.statusPoint,
+        repete: appointment.repete,
+        allDay: appointment.allDay,
+        exceptions: appointment.exceptions,
+        endRepeat: appointment.endRepeat,
+        color: appointment.color,
+        userNumber: appointment.userNumber,
+        modality: appointment.modality,
+        hashuser: appointment.hashuser,
+      };
+    });
+
+    res.json(formattedAppointments);
+  } catch (error) {
+    console.error('Erro ao buscar agendamentos por ID do profissional:', error);
+    res.status(500).json({ error: 'Failed to get appointments by barber ID' });
+  }
+};
+
 export const getAllAppointmentsByBarberId = async (req: Request, res: Response) => {
   try {
     const { barberId } = req.params;
@@ -390,7 +506,8 @@ export const getAllAppointmentsByBarberId = async (req: Request, res: Response) 
 
     let query: any = {
       barberId,
-      active: true, // Garantir que apenas agendamentos ativos sejam retornados
+      active: true,
+      manual: false,
     };
 
     if (filter && filter !== 'all') {
@@ -765,6 +882,7 @@ router.post('/check-appointment', checkExistingAppointment);
 router.get('/', getAllAppointments);
 router.get('/user/:userId', getAllAppointmentsByUserId);
 router.get('/barber/:barberId', getAllAppointmentsByBarberId);
+router.get('/barber/manual/:barberId', getAllAppointmentsByBarberIdManual);
 router.get('/barber/calendario/:barberId', getAllAppointmentsByBarberCalendario);
 router.get('/:id', getAppointmentById);
 router.get('/points/:id', getPoints);

@@ -31,6 +31,7 @@ import barberServiceRoutes from './adapters/controllers/BarberServiceController'
 import notificationRouter from './adapters/controllers/NotificationController';
 import userRouter from './adapters/controllers/UserController';
 import addressRouter from './adapters/routes/addressRoutes';
+import advertisementRoutes from './adapters/routes/advertisementRoutes';
 import appServiceRoutes from './adapters/routes/appServiceRoutes';
 import guidanceRoutes from './adapters/routes/guidanceRoutes';
 import logRoutes from './adapters/routes/logRoutes';
@@ -116,6 +117,7 @@ app.use('/addresses', authMiddleware, addressRouter);
 app.use('/subscription', subscriptionRoutes);
 app.use('/services', authMiddleware, serviceRoutes);
 app.use('/guidances', authMiddleware, guidanceRoutes);
+app.use('/advertisements', authMiddleware, advertisementRoutes);
 app.use('/pdf', authMiddleware, pdfRoutes);
 app.use('/logs', authMiddleware, logRoutes);
 
