@@ -1,8 +1,6 @@
-import { Appointment } from "../../entities/Appointment";
-import { User } from "../../entities/User";
-import { Appointment as AppointmentModel } from "../../frameworks/orm/models/Appointment";
-import { User as UserModel } from "../../frameworks/orm/models/User";
-import { Types } from "mongoose";
+import { Appointment } from '../../entities/Appointment';
+import { Appointment as AppointmentModel } from '../../frameworks/orm/models/Appointment';
+import { User as UserModel } from '../../frameworks/orm/models/User';
 
 export class AppointmentRepository {
   async create(appointmentData: Appointment): Promise<Appointment> {
@@ -11,30 +9,26 @@ export class AppointmentRepository {
   }
 
   async getAll(): Promise<Appointment[]> {
-    const appointments = await AppointmentModel.find()
-      .populate("userId")
-      .populate("barberId");
-    return appointments.map((appointment) => appointment.toObject());
+    const appointments = await AppointmentModel.find().populate('userId').populate('barberId');
+    return appointments.map(appointment => appointment.toObject());
   }
 
   async getById(appointmentId: string): Promise<Appointment | null> {
     const appointment = await AppointmentModel.findById(appointmentId)
-      .populate("userId")
-      .populate("barberId");
+      .populate('userId')
+      .populate('barberId');
     return appointment ? appointment.toObject() : null;
   }
 
   async update(
     appointmentId: string,
-    appointmentData: Partial<Appointment>
+    appointmentData: Partial<Appointment>,
   ): Promise<Appointment | null> {
-    const appointment = await AppointmentModel.findByIdAndUpdate(
-      appointmentId,
-      appointmentData,
-      { new: true }
-    )
-      .populate("userId")
-      .populate("barberId");
+    const appointment = await AppointmentModel.findByIdAndUpdate(appointmentId, appointmentData, {
+      new: true,
+    })
+      .populate('userId')
+      .populate('barberId');
     return appointment ? appointment.toObject() : null;
   }
 
@@ -44,17 +38,17 @@ export class AppointmentRepository {
 
   async getClientsByBarberId(barberId: string): Promise<any[]> {
     const appointments = await AppointmentModel.find({ barberId }).exec();
-    const userIds = appointments.map((appointment) => appointment.userId);
+    const userIds = appointments.map(appointment => appointment.userId);
 
     const users = await UserModel.find({ _id: { $in: userIds } });
 
-    return users.map((user) => user.toObject());
+    return users.map(user => user.toObject());
   }
 
   async getAllAppointmentsByBarberId(barberId: string): Promise<any[]> {
     const appointments = await AppointmentModel.find({ barberId }).exec();
-    const userIds = appointments.map((appointment) => appointment.userId);
-    const barberIds = appointments.map((appointment) => appointment.barberId);
+    const userIds = appointments.map(appointment => appointment.userId);
+    const barberIds = appointments.map(appointment => appointment.barberId);
 
     const users = await UserModel.find({ _id: { $in: userIds } });
     const barbers = await UserModel.find({ _id: { $in: barberIds } });
@@ -69,10 +63,22 @@ export class AppointmentRepository {
       return acc;
     }, {});
 
-    return appointments.map((appointment) => ({
+    return appointments.map(appointment => ({
       ...appointment.toObject(),
       userId: userMap[appointment.userId as string],
       barberId: barberMap[appointment.barberId as string],
     }));
+  }
+
+  async updateUserIdByHashuser(hashuser: string, userId: string): Promise<Appointment | null> {
+    const appointment = await AppointmentModel.findOneAndUpdate(
+      { hashuser, active: true },
+      { userId },
+      { new: true },
+    )
+      .populate('userId')
+      .populate('barberId');
+
+    return appointment ? appointment.toObject() : null;
   }
 }

@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import moment from 'moment-timezone';
 import { Types } from 'mongoose';
 import { Appointment } from '../../frameworks/orm/models/Appointment';
@@ -355,7 +355,7 @@ export const getAllAppointmentsByUserId = async (req: Request, res: Response) =>
     // Construir a query base para agendamentos ativos
     const query: any = {
       userId,
-      active: false,
+      active: true,
     };
 
     // Adicionar filtro por serviço se fornecido
@@ -877,6 +877,40 @@ export const getAllAppointmentsByBarberCalendario = async (req: Request, res: Re
   }
 };
 
+export const updateUserIdByHashuser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { userId, hashuser } = req.body;
+
+    if (!userId || !hashuser) {
+      return res.status(400).json({
+        error: 'userId e hashuser são obrigatórios',
+      });
+    }
+
+    // Verificar se o usuário existe e está ativo
+    const user = await User.findById(userId);
+    if (!user || user.active !== true) {
+      return res.status(404).json({
+        error: 'Usuário não encontrado ou inativo',
+      });
+    }
+
+    // Atualizar o agendamento usando o repository
+    const updatedAppointment = await appointmentRepository.updateUserIdByHashuser(hashuser, userId);
+
+    if (!updatedAppointment) {
+      return res.status(404).json({ error: 'Agendamento não encontrado com o hashuser fornecido' });
+    }
+
+    res.status(200).json({
+      message: 'Agendamento atualizado com sucesso',
+      appointment: updatedAppointment,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 router.post('/', createAppointment);
 router.post('/check-appointment', checkExistingAppointment);
 router.get('/', getAllAppointments);
@@ -894,5 +928,6 @@ router.post('/add-points', addPoints);
 router.post('/:id/exception', createException);
 router.put('/:id/end-repeat', updateEndRepeat);
 router.post('/cancel', cancelAppointment);
+router.put('/import/agenda', updateUserIdByHashuser);
 
 export default router;
