@@ -51,8 +51,8 @@ export const createAppointment = async (req: Request, res: Response) => {
       });
     }
 
-    const createAppointment = new CreateAppointment(appointmentRepository);
-    const appointment = await createAppointment.execute({
+    // Preparar dados do agendamento
+    const appointmentData: any = {
       userId,
       barberId,
       date,
@@ -72,9 +72,28 @@ export const createAppointment = async (req: Request, res: Response) => {
       hashuser,
       userName,
       userEmail,
-      userCpf,
-      userAddress,
-    });
+    };
+
+    // Adicionar CPF apenas se fornecido
+    if (userCpf && userCpf.trim() !== '') {
+      appointmentData.userCpf = userCpf;
+    }
+
+    // Adicionar endereço apenas se pelo menos um campo estiver preenchido
+    if (
+      userAddress &&
+      (userAddress.street?.trim() ||
+        userAddress.number?.trim() ||
+        userAddress.city?.trim() ||
+        userAddress.state?.trim() ||
+        userAddress.zipCode?.trim() ||
+        userAddress.complement?.trim())
+    ) {
+      appointmentData.userAddress = userAddress;
+    }
+
+    const createAppointment = new CreateAppointment(appointmentRepository);
+    const appointment = await createAppointment.execute(appointmentData);
 
     let whatsappUrl = null;
 
